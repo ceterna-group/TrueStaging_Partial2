@@ -1,0 +1,244 @@
+<apex:page standardcontroller="Budget__c" extensions="ProductsSelectorController" sidebar="false" title="Product Selector" showQuickActionVfHeader="false">
+
+  <apex:includeScript value="{!URLFOR($Resource.ProductSelector, '/app/js/vue.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.ProductSelector, '/app/js/_utility.min.js')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.ProductSelector, '/app/css/index.min.css')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.ProductSelector, '/app/slds/slds.min.css')}" />
+  <apex:includeScript value="/support/console/42.0/integration.js"/>
+  <meta charset="UTF-8"></meta>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+  <meta name="author" content="Elliott Thurman-Newell <elliott@ceterna.com>"></meta>
+  <title>Product Selector</title>
+  <style>
+    .app-profit {
+  position: absolute;
+  margin-top: 30px;
+  margin-left: 10px;
+}
+
+.app-ts-total {
+  position: absolute;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+  </style>
+
+  <body onresize="vm.adjust()">
+    <div id="vm" class="slds">
+
+      <!-- Loading Page -->
+      <div v-show="loaded == false">
+        <div class="spinner-fullscreen">
+          <table class="spinner-msg">
+            <tr>
+              <td>Loading...</td>
+            </tr>
+          </table>
+          <div class="slds-spinner_container">
+            <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+              <div class="slds-spinner__dot-a"></div>
+              <div class="slds-spinner__dot-b"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product List -->
+      <div id="left-card" class="slds-card app-card--left">
+        <div id="left-card-header" class="app-card--header slds-padding-10">
+          <h2>{{opp_name}}</h2>
+          <div class="slds-text--heading">{{ decode(opp_headline) }}</div>
+          <br></br>
+          <div class="slds-input--wrapper slds-input-icon--right app-header--filter">
+            <label>Product Family</label>
+            <select class="slds-input" v-model="selected_family">
+              <option v-for="family in product_families">{{family}}</option>
+            </select>
+            <div class="slds-input--select"></div>
+          </div>
+          <div class="slds-input--wrapper slds-input-icon--right app-header--filter">
+            <label>Product Type</label>
+            <select id="preprocess_1" class="slds-input" v-model="selected_type">
+              <option v-for="type in product_types[selected_family]">{{type}}</option>
+            </select>
+            <div class="slds-input--select"></div>
+          </div>
+          <div class="slds-input--wrapper slds-input-icon--right app-header--search">
+            <label>Global Search</label>
+            <input class="slds-input" type="text" placeholder="Search products..." v-model="search_query" />
+            <div id="preprocess_2" v-show="search_query != ''" class="slds-input--reset">
+              <div class="reset-icon"></div>
+            </div>
+          </div>
+        </div>
+        <div class="app-table--wrapper" style="height: {{left_table.height + 'px'}}; overflow: hidden; width: {{left_table.width + 'px'}}">
+          <table class="slds-table slds-table--scrolling">
+            <thead>
+              <tr>
+                <th style="width: {{left_table.col10 + 'px'}}">Code</th>
+                <th style="width: {{left_table.col50 + 'px'}}">Name</th>
+                <th style="width: {{left_table.col10 + 'px'}}">Cost</th>
+                <th style="width: {{left_table.col10 + 'px'}}">Markup</th>
+                <th style="width: {{left_table.col10 + 'px'}}">No.</th>
+                <th style="width: {{left_table.col10 + 'px'}}">Action</th>
+              </tr>
+            </thead>
+            <tbody style="height: {{left_table.height - 35 + 'px'}}">
+              <tr v-for="product in products | filterBy selected_family in 'prodFamily' 'All' | filterBy selected_type in 'prodType' 'All' | filterBy search_query in 'prodName' 'prodCode' 'prodFamily' 'prodType'" transition="fade">
+                <td style="width: {{left_table.col10 + 'px'}}">{{product.prodCode}}</td>
+                <td style="width: {{left_table.col50 + 'px'}}">
+                  <div style="width: {{left_table.col50 + 'px'}}" class="slds-truncate">{{ decode(product.prodName) }}</div>
+                </td>
+                <td style="width: {{left_table.col10 + 'px'}}">
+                  <input class="slds-input" type="text" placeholder="Markup" v-model="product.standardPrice" />
+                  <!--£{{product.standardPrice}}-->
+                </td>
+                <td style="width: {{left_table.col10 + 'px'}}">
+                  <input id="preprocess_3" class="slds-input" type="text" placeholder="Markup" v-model="product.prodMarkup" />
+                </td>
+                <td style="width: {{left_table.col10 + 'px'}}">
+                  <input id="preprocess_4" class="slds-input" type="text" placeholder="No." v-model="product.Quantity" />
+                </td>
+                <td style="width: {{left_table.col10 + 'px'}}">
+                  <button id="preprocess_5" class="slds-button--text">Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Product Cart -->
+      <div id="right-card" class="slds-card app-card--right">
+        <div id="right-card-header" class="app-card--header slds-padding-10">
+          <h2>Cart</h2>
+          <div class="slds-text--heading">Products to add to budget item</div>
+        </div>
+        <div class="app-table--wrapper" style="height: {{right_table.height + 'px'}}; overflow: hidden; width: {{right_table.width + 'px'}}">
+          <div class="app-cart--header">
+            <div style="width: {{right_table.col50 + 'px'}}">Name</div>
+            <div style="width: {{right_table.col10 + 'px'}}">Cost</div>
+            <div style="width: {{right_table.col10 + 'px'}}">Markup</div>
+            <div style="width: {{right_table.col10 + 'px'}}">No.</div>
+            <div style="width: {{right_table.col10 + 'px'}}">Total</div>
+            <div style="width: {{right_table.col10 + 'px'}}">Action</div>
+          </div> 
+          <div class="app-cart--body" style="height: {{right_table.height - 35 + 'px'}}">
+            <div v-for="product in existing_products">
+              <div style="width: {{right_table.width + 'px'}}">
+                <div style="width: {{right_table.col50 + 'px'}}">
+                  <div style="width: {{right_table.col50 + 'px'}}" class="slds-truncate">{{ decode(product.productName) }}</div>
+                </div>
+                <div style="width: {{right_table.col10 + 'px'}}">
+                  <input id="preprocess_10" class="slds-input" type="text" placeholder="Cost" v-model="product.standardPrice" />
+                </div>
+                <div style="width: {{right_table.col10 + 'px'}}">
+                  <input id="preprocess_6" class="slds-input" type="text" placeholder="Markup" v-model="product.markup" />
+                </div>
+                <div style="width: {{right_table.col10 + 'px'}}">
+                  <input id="preprocess_7" class="slds-input" type="text" placeholder="No." v-model="product.quantity" />
+                </div>
+                <div style="width: {{right_table.col10 + 'px'}}">
+                  £{{product.totalPrice.toFixed(2)}}
+                </div>
+                <div style="width: {{right_table.col10 + 'px'}}">
+                  <button id="preprocess_8" class="slds-button--text">Remove</button>
+                </div>
+              </div>
+              <div class="app-product--info" style="width: {{right_table.width + 'px'}}">
+                <input placeholder="Description.." class="slds-input" v-model="product.lineDescription"/>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app-profit">Profitability is £{{(cart_total - ts_cost).toFixed(2)}}</div>
+        <div class="app-ts-total">TS Cost is £{{ts_cost.toFixed(2)}}</div>
+        <div class="app-total">Total is £{{cart_total.toFixed(2)}}</div>
+        <button id="preprocess_9" class="slds-button app-save">{{button_msg}}</button>
+      </div>
+
+    </div>
+    
+    
+    <script src="{!URLFOR($Resource.ProductSelector, '/app/js/_data.min.js')}"></script>
+    <script src="{!URLFOR($Resource.ProductSelector, '/app/js/_preprocessor.js')}"></script>
+    <script src="{!URLFOR($Resource.ProductSelector, '/app/js/_controller.js')}"></script>
+    <script>
+      // call remoting with an action and optional obj to pass through
+      var _apex = function(action, obj) {
+          // form of a promise
+          return new Promise(function(success, fail) {
+            // if action is 'NA' skip remoting, used for local dev
+            if (action == 'NA') {
+              return success('')
+            }
+            // if there is an obj, pass it, else dont
+            if (obj) {
+              Visualforce.remoting.Manager.invokeAction(action, obj, function(res) {
+                if (res == 'Error') {
+                  _log(action + ' failed', 'err');
+                  return fail();
+                }
+                success(res);
+              })
+            } else {
+              Visualforce.remoting.Manager.invokeAction(action, function(res) {
+                if (res == 'Error') {
+                  _log(action + ' failed', 'err');
+                  return fail();
+                }
+                success(res);
+              })
+            }
+          })
+        }
+        // this allows for an interface between the back-end and the front-end
+      var interfacer = {
+        // called from the front-end, sets the back-end data to the objects in data.js
+        get_data: function(budgetId) {
+          return new Promise(function(success, fail) {
+            _apex('{!$RemoteAction.ProductsSelectorController.getProducts}').then(function(products) {
+              console.log(products)
+              db_products = products;
+              _apex('{!$RemoteAction.ProductsSelectorController.getExistingOppProductsForBudget}', budgetId).then(function(oppitems) {
+                var x = JSON.parse(JSON.stringify(oppitems));
+                console.log(x);
+                db_oppitems = oppitems;
+                success();
+              }).catch(function() {
+                fail('LOAD_OPPITEMS');
+              })
+              success();
+            }).catch(function() {
+              fail('LOAD_PRODUCTS');
+            })
+          })
+        },
+        // called from the front-end, sends the back-end data it needs to upload
+        set_data: function(uploads) {
+          return new Promise(function(success, fail) {
+            _apex('{!$RemoteAction.ProductsSelectorController.createOppLineItem}', uploads).then(function() {
+              success();
+            }).catch(function() {
+              fail('SAVE_PRODUCTS');
+            })
+          })
+        }
+      }
+    </script>
+    <script>
+      // initialises the app by getting the data
+      function start(a, b, c, d) {
+        interfacer.get_data(b).then(function() {
+          _log('Successfully interfaced.');
+          vm.load_data(a, b, c, d);
+        }).catch(function(error) {
+          _log('Get data failed for', error);
+        })
+      }
+      // written within this VF page so we can set these values in the start function
+      start('{!oppId}', '{!recordId}', "{!opportunityName}", '{!headLineInformation}');
+    </script>
+  </body>
+
+</apex:page>

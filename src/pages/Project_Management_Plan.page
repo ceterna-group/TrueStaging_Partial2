@@ -1,0 +1,312 @@
+<apex:page controller="ProjectManagementChart" id="pmChartpage" applyBodyTag="false">
+
+  <apex:includeScript value="{!URLFOR($Resource.PMGanttJS, '/js/vue.js')}"/>
+  <apex:includeScript value="{!URLFOR($Resource.PMGanttJS, '/js/_utility.js')}"/>
+  <apex:includeScript value="{!URLFOR($Resource.PMGanttJS, '/js/_preprocessor.js')}"/>
+  <apex:includeScript value="{!URLFOR($Resource.PMGanttJS, '/js/_helper.js')}"/>
+  <apex:includeScript value="{!URLFOR($Resource.PMGanttJS, '/js/_data.js')}"/>
+  <apex:stylesheet value="{!URLFOR($Resource.PMGanttCSS, '/css/app.css')}"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+  <meta charset="UTF-8"></meta>
+  <meta name="author" content="Elliott Thurman-Newell <elliott@ceterna.com>"></meta>
+  <title>PM Gantt</title>
+  <style>
+    .event-times { position: absolute }
+    .event-times.Event { margin-top: 20px }
+  </style>
+  
+  <div id="vm">
+  
+    <!-- Error Page -->
+    <div v-show="error == true">
+      <div class="error-overlay"></div>
+      <div class="error-wrapper">
+        <div class="error-header">Something went wrong!</div>
+        <div class="error-body">
+          There was an issue with saving your changes. Please refresh the page and try again.
+          <br/><br/>
+          Contact your SFDC Administrator and give this reference code: {{error_code}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Page -->
+    <div v-show="loaded == false">
+      <div class="spinner-fullscreen">
+        <table class="spinner-msg">
+          <tr>
+            <td>Loading...</td>
+          </tr>
+        </table>
+        <div class="slds-spinner_container">
+          <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Block -->
+    <div id="control-bar">
+      <!-- Search Bar -->
+      <input v-model="search_query" class="slds-input search-input" placeholder="Search all Projects" />
+      <img class="control-search" src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/search_60.png')}" />
+      <div id="control-reset" class="control-reset" v-show="search_query != ''" transition="fadeboth">
+        <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+      </div>
+      <!-- Toggle Buttons -->
+      <div id="control-deposit" class="control-checkbutton red {{deposit_toggle}}" v-model="deposit_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-deposit"></path>
+        </svg>
+      </div>
+      <div id="control-invoice" class="control-checkbutton red {{invoice_toggle}}" v-model="invoice_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-invoice"></path>
+        </svg>
+      </div>
+      <div id="control-price" class="control-checkbutton {{price_toggle}}" v-model="price_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-price"></path>
+        </svg>
+      </div>
+      <div id="control-refresh" class="control-checkbutton {{refresh_toggle}}" v-model="price_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-refresh"></path>
+        </svg>
+      </div>
+      <div id="control-sidebar" class="control-checkbutton {{sidebar_toggle}}" v-model="sidebar_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-sidebar"></path>
+        </svg>
+      </div>
+      <!-- Save Button -->
+      <button id="control-save" class="control-save">{{save_text}}</button>
+    </div>
+
+    <!-- Project Details Wrapper -->
+    <div id="projects-wrapper" onscroll="vm.keep_scroll()">
+      <div id="project-row-detail-wrapper">
+        <div style="height: {{ proj.selected ? get_height(proj) : proj.seperator ? '30px' : '60px' }} !important" v-for="(index, proj) in projects | orderBy 'year' 'order_month' 'order_install' 'name' | filterBy filter_projects" 
+        class="project-row project-rows-detail {{proj.month + proj.year}} {{proj.seperator}} {{proj.selected}} {{proj.no_dates}} {{proj.is_locked + 'lock'}} {{proj.past + 'past'}}" transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
+          <div class="project-details-wrapper">
+            <div class="project-details">
+              <!-- Month Seperators -->
+              <div class="project-specials" v-if="proj.seperator == true">
+                {{proj.month}} {{proj.year}}
+              </div>
+              <div id="proj-else">
+                <!-- Project Details -->
+                <div class="project-status-bar {{proj.no_dates}} {{proj.opp_stage}}"></div>
+                <div class="project-client">{{ filter_uri(proj.client) }}</div>
+
+                
+                  <div class="project-name">
+                    <a class="project-link" target="_blank">
+                      <span class="project-number" style="font-size: 13px !important; pointer-events: all">[{{proj.number}}]</span>
+                    </a>
+                    <span style="font-weight: bold; font-size: 14px">&nbsp;{{ filter_uri(proj.name) }}</span>
+                  </div>
+                
+
+                <span v-show="proj.selected == 'selected' && price_toggle == true && proj.no_dates == 'dates'|| proj.selected == 'selected' && proj.is_locked != 'VOID' && price_toggle == true && proj.no_dates == 'dates'" class="project-amount" transition="fadeboth">&pound;{{ set_currency(proj.total_costs) }}</span>
+                <div class="project-pm project-initial-label">PM: <span class="project-initials">{{proj.project_manager}}</span></div>
+                <div class="project-cc project-initial-label">CC: <span class="project-initials">{{proj.crew_chiefs}}</span></div>
+                <!-- Project Icons -->
+                <div class="project-icons">
+                  <div class="project-invoice {{proj.is_invoiced}}">
+                    <svg style="pointer-events: none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+                      <path id="svg-invoice2"></path>
+                    </svg>
+                  </div>
+                  <div class="project-deposit {{proj.is_deposited}}">
+                    <svg style="pointer-events: none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+                      <path id="svg-deposit2"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="project-lock {{proj.is_locked}}">
+                  <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/lock_60.png')}" />
+                </div>
+
+                <div v-show="proj.selected == 'selected'" class="project-info">
+                  <textarea v-model="proj.additional_info" type="text" class="slds-input proj-textbox"></textarea>
+                </div>
+
+                <!-- Datepickers -->
+                <div class="project-time {{ time.type }}" v-for="time in proj.types">
+                  <div class="project-time-row" v-show="time.start_date != '99/99/9999' && proj.selected == 'selected'">
+                    <div class="project-time-row-half"> 
+                      <label class="time-row-label">{{time.type}} Start</label>
+                      <div v-show="proj.is_locked == 'VOID'" onclick="vm.input_position(this, event)" class="time-row-input time-rows-start slds-input">{{time.start_date}}</div>
+                      <div v-show="proj.is_locked != 'VOID'" class="time-row-input slds-input">{{time.start_date}}</div>
+                      <div class="mini-reset" v-show="time.edited == true" transition="fadeboth">
+                        <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+                      </div>
+                    </div>
+                    <div class="project-time-row-half" v-show="time.type !== 'truck' && time.type !== 'signoff' && time.type != 'drawing' && time.type != 'transport' && time.type != 'client' && time.type != 'collection'">
+                      <label class="time-row-label">{{time.type}} Finish</label>
+                      <div v-show="proj.is_locked == 'VOID'" onclick="vm.input_position(this, event)" class="time-row-input time-rows-end slds-input">{{time.end_date}}</div>
+                      <div v-show="proj.is_locked != 'VOID'" class="time-row-input slds-input">{{time.end_date}}</div>
+                      <div class="mini-reset" v-show="time.edited == true" transition="fadeboth">
+                        <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Scrollable Area -->
+      <div id="project-scroll" onscroll="vm.keep_scroll()">
+        <div id="project-row-time-wrapper">
+          <div style="height: {{ proj.selected ? get_height(proj) : proj.seperator ? '30px' : '60px' }} !important" v-for="(index, proj) in projects | orderBy 'year' 'order_month' 'order_install' 'name' | filterBy filter_projects" class="project-row project-rows-time {{proj.seperator}} {{proj.selected}} {{proj.no_dates}} {{proj.is_locked + 'lock'}}" transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
+            <!-- Gantt Time Blocks -->
+            <div class="project-times-wrapper">
+              <div v-for="time in proj.types" class="project-times {{ time.left_position }} {{ time.type }}" style="margin-left: {{time.left_position + 'px'}}; width: {{time.gantt_width}}; background: {{time.color}}">
+                {{ time.type }}
+              </div>
+            </div>
+            <div class="ghost-times-wrapper">
+              <div v-for="time in proj.types" class="project-times {{ time.left_position }} {{ time.type }}" style="margin-left: {{time.ghost_left_position + 'px'}}; width: {{time.ghost_gantt_width}}; background: {{time.color}}">
+                {{time.type}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Wrapper -->
+    <div id="events-wrapper">
+      <div id="events-scroll">
+        <div v-for="event in events | filterBy 'Holiday' in 'type'" style="background: {{event.color}}; margin-left: {{event.left_position}}; width: {{event.gantt_width}}" class="event-times {{event.type}}">
+          {{event.name}}
+        </div>
+        <div v-for="event in events | filterBy 'Event' in 'type'" style="background: {{event.color}}; margin-left: {{event.left_position}}; width: {{event.gantt_width}}" class="event-times {{event.type}}">
+          {{event.name}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Column Wrapper -->
+    <div id="dates-wrapper">
+      <div id="date-column-wrapper" style="height: 100%">
+        <div v-for="day in days" id="{{day.Id}}" class="date-column {{day.Today}}">
+          <div class="date-header">
+            <div class="date-month">{{day.Month}}</div>
+            <div class="date-day">{{day.Day}}</div>
+            <div class="date-date">{{day.Date}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unquoted Sidebar -->
+    <div id="unquoted-wrapper">
+      <div class="unquoted-header">Unquoted Projects</div>
+      <div class="unquoted-blocks">
+        <div v-for="proj in unquoted | orderBy vh.numerate(OppClosedDate)" class="unquoted-block">
+          <div class="unquoted-name">{{filter_uri(proj.OppName)}}</div>
+          <div class="unquoted-sent {{proj.OppQuoteSent}}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+              <path id="svg-mail"></path>
+            </svg>
+          </div>
+          <div class="unquoted-date">{{proj.OppClosedDate}}</div>
+          <div v-show="price_toggle == true" class="unquoted-amount" transition="fadeboth">&pound;{{ set_currency(proj.OppAmount) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Picker -->
+    <div id="date-picker" v-show="picker_show == true">
+      <div class="date-picker-control">
+        <div id="date-picker-back" class="date-picker-back">
+          <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/left_60.png')}" />
+        </div>
+        <div class="date-picker-title">{{picker_month}}</div>
+        <div id="date-picker-forward" class="date-picker-forward">
+          <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/right_60.png')}" />
+        </div>
+      </div>
+      <div class="date-picker-dates">
+        <div class="date-picker-headers">
+          <div class="date-picker-header">Sun</div>
+          <div class="date-picker-header">Mon</div>
+          <div class="date-picker-header">Tue</div>
+          <div class="date-picker-header">Wed</div>
+          <div class="date-picker-header">Thu</div>
+          <div class="date-picker-header">Fri</div>
+          <div class="date-picker-header">Sat</div>
+        </div>
+        <div class="date-picker-dates">
+          <div v-for="day in picker_days" class="date-picker-date {{day.Selected}} {{day.Past}} {{day.Original}}">{{day.Day}}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  
+  <script>
+    // call remoting with an action and optional obj to pass through
+    var _apex = function (action, obj) {
+      _log('Apex called for function:', action);
+      // form of a promise
+      return new Promise(function (success) {
+        // if action is 'NA' skip remoting, used for local dev
+        if (action == 'NA') { return success('') }
+        // if there is an obj, pass it, else dont
+        if (obj) {
+          Visualforce.remoting.Manager.invokeAction(action, obj, function (res) {
+            if (res == 'Error') { return _log(action + ' failed!', 'err') }
+            success(res);
+          })
+        } else {
+          Visualforce.remoting.Manager.invokeAction(action, function (res) {
+            if (res == 'Error') { return _log(action + ' failed!', 'err') }
+            success(res);
+          })
+        }
+      })
+    }
+
+    // this allows for an interface between the back-end and the front-end
+    // must be added within an open script tag on the VF page in order to 
+    // access the visualforce object
+    var interfacer = {
+      // called from the front-end, sets the back-end data to the objects in data.js
+      get_data: function () {
+        return new Promise(function (success, fail) {
+          _apex('ProjectManagementChart.getAllProjects').then(function (projects) {
+            db_projects = projects;
+            _apex('ProjectManagementChart.getCalendarHeadlines').then(function (events) {
+              db_events = events;
+              _apex('ProjectManagementChart.getColorCodes').then(function (colors) {
+                db_colors = colors;
+                _apex('ProjectManagementChart.getAllPipelineOpportunities').then(function (unquoted) {
+                  console.log(unquoted);
+                  db_unquoted = unquoted;
+                  return success();
+                })
+              })
+            })
+          })
+        })
+      },
+      // called from the front-end, sends the back-end data it needs to upload
+      set_data: function (obj) {
+        return new Promise(function (success, fail) {
+          _apex('ProjectManagementChart.updateProjects', obj).then(function () {
+            return success();
+          })
+        })
+      }
+    }
+  </script>
+  <script type="text/javascript" src="{!URLFOR($Resource.PMGanttJS, '/js/_controller.js')}"></script>
+  
+</apex:page>

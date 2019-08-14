@@ -1,0 +1,493 @@
+<apex:page controller="CrewAndLogisticsGanttChart" id="crewChartpage" sidebar="false" showHeader="false">
+
+    <apex:includeScript value="{!URLFOR($Resource.CLAllocationJS, '/js/vue.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.CLAllocationJS, '/js/_utility.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.CLAllocationJS, '/js/_preprocessor.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.CLAllocationJS, '/js/_helper.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.CLAllocationJS, '/js/_data.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.CLAllocationCSS, '/css/app.css')}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/ >
+    <meta charset="UTF-8" />
+
+    
+    
+    
+    <meta name="author" content="Elliott Thurman-Newell <elliott@ceterna.com>"/ >
+    
+    <title>Crew/Logistics Manager</title>
+    
+    
+    <style>
+        div#control-bar input, .editor-search input {
+        	width: calc(100% - 50px);
+        }
+        div#control-bar img, .editor-search img {
+        	margin-top: 4px;
+        }
+        button {
+        	font-weight: 400 !important;
+        }
+        .slot_empty {
+        	opacity: 0.3;
+        }
+        .project-row.not_selected .project-info {
+        	display: none;
+        }
+
+        .projectCollapse {
+            display: none;
+        }
+
+        .slotsCollapse {
+            display: none;
+        }
+        
+    </style>
+    
+    <div id="vm" onclick="vm.deselect_projs()">
+        
+        <!-- Error Page -->
+        <div v-show="error == true">
+            <div class="overlay"></div>
+            <div class="error-wrapper">
+                <div class="error-header">Something went wrong!</div>
+                <div class="error-body">
+                    There was an issue with saving your changes. Please refresh the page and try again.
+                    <br/>
+                    <br/> Contact your SFDC Developers and give this reference code: {{error_code}}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Page -->
+        <div v-show="loaded == false">
+            <div class="spinner-fullscreen">
+                <table class="spinner-msg">
+                    <tr>
+                        <td>Loading...</td>
+                    </tr>
+                </table>
+                <div class="slds-spinner_container">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Control Block -->
+        <div id="control-bar">
+            <!-- Search Bar -->
+            <input v-model="search_query" class="slds-input search-input" placeholder="Search all Projects" />
+            <img class="control-search" src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/search_60.png')}" />
+            <div id="control-reset" class="control-reset" v-show="search_query != ''" transition="fadeboth">
+                <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+            </div>
+            <!-- Save Button -->
+            <button id="control-save" class="control-save">{{save_text}}</button>
+        </div>
+        
+        <!-- Project Details Wrapper -->
+        <div id="projects-wrapper" onscroll="vm.keep_scroll()">
+            <div id="project-row-detail-wrapper">
+                <div v-for="proj in projects | orderBy 'year' 'order_month' 'order_install' | filterBy filter_projects" class="project-row project-rows-detail {{proj.month + proj.year}} {{proj.seperator}} {{proj.selected}} {{proj.selected_row}} {{proj.no_dates}} {{proj.is_locked + 'lock'}} {{proj.past + 'past'}}" transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
+                    <div class="project-details-wrapper">
+                        <div class="project-details">
+                            <!-- Month Seperators -->
+                            
+                            <div class="project-specials" v-if="proj.seperator == true">
+                                {{proj.month}} {{proj.year}}
+                            </div>
+                           
+                            <div class="{{proj.month + proj.year}}projectCollapse" id="elser" style="margin-left:70px;">
+                            
+                                <!-- Project Details -->
+                                <div class="project-status-bar {{proj.no_dates}}">
+                                    
+                                    <div class="project-status-bar" style="width:40px; text-align:center; vertical-align:middle; line-height: 100px;">
+                                        {{ (proj.workshop_estimate / 12).toFixed(1) }}
+                                    </div>
+                                    
+                                    <div class="project-status-bar" style="width:40px; margin-left:41px; text-align:center; vertical-align:middle; line-height: 100px;">
+                                        {{ ((proj.workshop_estimate / 12) - (proj.workshop_actual / 12)).toFixed(1) }}
+                                    </div>
+                                    
+                                </div>
+                                
+                                <div v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-client">{{ filter_uri(proj.client) }}</div>
+                                <div class="project-name">{{ filter_uri(proj.name) }} <span class="project-number">[{{proj.number}}]</span></div>
+                                <div class="project-hours">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Estimated</th>
+                                                <th>Assigned</th>
+                                                <th>Balance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Workshop</td>
+                                                <td>{{ (proj.workshop_estimate / 12).toFixed(1) }}</td>
+                                                <td>{{ (proj.workshop_actual / 12).toFixed(1) }}</td>
+                                                <td class="cell-balance">{{ ((proj.workshop_estimate / 12) - (proj.workshop_actual / 12)).toFixed(1) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Onsite</td>
+                                                <td>{{ (proj.onsite_estimate).toFixed(1) }}</td>
+                                                <td>{{ (proj.onsite_actual / 12).toFixed(1) }}</td>
+                                                <td class="cell-balance">{{ (proj.onsite_estimate - (proj.onsite_actual / 12)).toFixed(1) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total</td>
+                                                <td>{{ ((proj.workshop_estimate / 12) + proj.onsite_estimate).toFixed(1) }}</td>
+                                                <td>{{ ((proj.workshop_actual / 12) + (proj.onsite_actual / 12)).toFixed(1) }}</td>
+                                                <td class="cell-balance">{{ (((proj.workshop_estimate / 12) + proj.onsite_estimate) - ((proj.workshop_actual / 12) + (proj.onsite_actual / 12))).toFixed(1) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="client-visit">
+                                    The client will be visiting this project on {{proj.client_date}}
+                                </div>
+                                <div class="project-info" style="padding:10px 0 0 4px; font-size: 14px">
+                                    {{ replacer(proj.additional_info) }}
+                                </div>
+                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-pm project-initial-label">Project Manager: <span class="project-initials">{{proj.project_manager}}</span></div>
+                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-cc project-initial-label">Crew Chief/s: <span class="project-initials">{{proj.crew_chiefs}}</span></div>
+                           
+                           </div>
+                         
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Scrollable Area -->
+            <div id="project-scroll" onscroll="vm.keep_scroll()">
+                <div id="project-row-time-wrapper">
+                    <div v-for="proj in projects | orderBy 'year' 'order_month' 'order_install' | filterBy filter_projects" class="project-row project-rows-time {{proj.month}}{{proj.year}}slotsCollapse {{proj.seperator}} {{proj.selected}} {{proj.no_dates}} {{proj.selected_row}} {{proj.is_locked + 'lock'}}" transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
+                        <!-- Gantt Time Blocks -->
+                        <div class="project-times-wrapper">
+                            <div v-for="time in proj.types" class="project-times" style="margin-left: {{time.left_position}}; width: {{time.gantt_width}}">
+                                <div v-for="slot in time.slots" class="project-time-slot {{ slot.timeslots.length == 0 ? 'slot_empty' : '' }}" style="background: {{time.color}}" draggable="true" 
+                                 ondragover="allowDrop(event)">
+      								<span style="font-weight: bold; font-size: 12px;">{{slot.slot_title}}</span><br/>
+                                    <span>{{slot.workerlist}}</span>
+                                    <div class="slot-truck {{slot.truck}}">
+                                        {{slot.truck_total}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                                            <path id="svg-truck1"></path>
+                                            <circle cx="68" cy="68" r="6"></circle>
+                                            <path id="svg-truck2"></path>
+                                            <circle cx="32" cy="68" r="6"></circle>
+                                        </svg>
+                                    </div>
+                                    <div v-show="slot.total !== 0" class="slot-time">
+                                        {{slot.total * 1}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+                                            <path id="svg-time"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Events Wrapper -->
+        <div id="events-wrapper">
+            <div id="events-scroll">
+                <div v-for="event in events" style="background: {{event.color}}; margin-left: {{event.left_position}}; width: {{event.gantt_width}}" class="event-times">
+                    {{event.name}}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Date Column Wrapper -->
+        <div id="dates-wrapper">
+            <div id="date-column-wrapper">
+                <div v-for="day in days" id="{{day.Id}}" class="date-column {{day.Today}}">
+                    <div class="date-header">
+                        <div class="date-month">{{day.Month}}</div>
+                        <div class="date-day">{{day.Day}} {{day.Date}}</div>
+                        <div class="date-date">{{ (day.Total / 12).toFixed(1) }} days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slot Editor -->
+        <div id="slot-editor" v-show="slot_edit == true" transition="fadeboth">
+            <div class="overlay"></div>
+            <div class="editor-wrap">
+                <div class="editor-header">
+                    Slot Editor
+                    <div class="editor-close">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+                            <path id="svg-close"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="editor-slots">
+                    <div class="slots-header">
+                        <div class="slots-name">{{selected_slot.project_name}} ({{selected_slot.type}})</div>
+                        <div class="slots-date">{{selected_slot.date}}</div>
+                        <div class="slots-help">
+                            Enter a start and end time to create a new timeslot. Click on a timeslot to be able to see and assign available crew.
+                        </div>
+                        <div class="slots-element">
+                            <div class="slots-label">Start</div>
+                            <div class="slots-select" style="position: relative">
+                                <div class="slds-select_container">
+                                    <select v-model="start_time" class="slds-select">
+                                        <option v-for="time in times">{{time}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slots-element">
+                            <div class="slots-label">End</div>
+                            <div class="slots-select" style="position: relative">
+                                <div class="slds-select_container">
+                                    <select v-model="end_time" class="slds-select">
+                                        <option v-for="time in times">{{time}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slots-element">
+                            <div class="slots-label">Title</div>
+                            
+                            <input class="slds-select" type="text" v-model="title" style="position: relative"/>  
+                            
+                        </div>
+                        <button class="slots-create">New Slot</button>
+                    </div>
+                    <div class="editor-timeslot-scroll">
+                        <div v-for="timeslot in selected_slot.timeslots | filterBy 'false' in 'toDelete' | orderBy 'projTSStartTime'" class="editor-timeslot {{timeslot.selected}}">
+                            <div class="editor-timeslot-header">
+                                {{ tfhour(timeslot.projTSStartTime) }} - {{ tfhour(timeslot.projTSFinishTime) }}
+                                {{timeslot.projTSTitle}}
+                                <button class="editor-btn-delete">Delete Timeslot</button>
+                            </div>
+                            <div>
+                                <table class="editor-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Role</th>
+                                            <th>CNC</th>
+                                            <th>Forklift</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="crew in timeslot.labourAllocationList">
+                                            <td>{{crew.name}}</td>
+                                            <td>{{crew.type}}</td>
+                                            <td>
+                                                <div style="position: relative">
+                                                    <div v-show="crew.assignedRole != 'Transport'" class="slds-select_container">
+                                                        <select v-model="crew.assignedRole" class="slds-select">
+                                                            <option v-for="role in roles">{{role}}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <span v-show="crew.assignedRole == 'Transport'">{{crew.assignedRole}}</span>
+                                            </td>
+                                            <td>
+                                                <input v-show="crew.cnc != 'VOID'" type="checkbox" v-model="crew.cnc" disabled="true"/>
+                                                <span v-show="crew.cnc == 'VOID'">VOID</span>
+                                            </td>
+                                            <td>
+                                                <input v-show="crew.forklift != 'VOID'" type="checkbox" v-model="crew.forklift" disabled="true"/>
+                                                <span v-show="crew.forklift == 'VOID'">VOID</span>
+                                            </td>
+                                            <td>
+                                                <button class="editor-btn-remove">Remove</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-crew">
+                    <div class="editor-crew-header">
+                        <div class="editor-help">
+                            These are all the staff available for this day.
+                            <br/> Click on a timeslot to see who is available for those hours, and assign staff to that timeslot. 
+                        </div>
+                        <div class="editor-search">
+                            <input v-model="crewquery" class="slds-input search-input" placeholder="Search all Crew" />
+                            <img class="control-search" src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/search_60.png')}" />
+                            <div id="crew-reset" class="control-reset" v-show="crewquery != ''" transition="fadeboth">
+                                <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+                            </div>
+                            <button class="editor-btn-crewchief">Crew Chiefs</button>
+                            <button class="editor-btn-carpenter">Carpenters</button>
+                            <button class="editor-btn-painter">Painters</button>
+                            <button class="editor-btn-labourer">Labourers</button>
+                            <button class="editor-btn-fabricator">Fabricators</button>
+                            <button class="editor-btn-all">All</button>
+                        </div>
+                        
+                    </div>
+                    <div class="crew-card-scroller">
+                        <div v-show="staff.available == true" v-for="staff in staff | filterBy check_available | orderBy 'staffName'" class="crew-card {{staff.available}}">
+                            <div class="crew-type">{{staff.allocationType}}</div>
+                            <div class="crew-name">{{staff.staffName}}</div>
+                            <div class="crew-available">{{staff.reason}}</div>
+                            <div class="crew-cnc">CNC
+                                <input type="checkbox" v-model="staff.cncOperator" disabled="true"/>
+                            </div>
+                            <div class="crew-forklift">FORKLIFT
+                                <input type="checkbox" v-model="staff.forkliftLicense" disabled="true"/>
+                            </div>
+                            <div class="crew-drivers">DRIVING LICENSE
+                                <input type="checkbox" v-model="staff.driversLicense" disabled="true"/>
+                            </div>
+                            <div class="crew-ipaf">IPAF
+                                <input type="checkbox" v-model="staff.iPAF" disabled="true"/>
+                            </div>
+                            <div class="crew-role">{{staff.projectRole}}</div>
+                            <div class="crew-role">{{staff.secondaryRole}}</div>
+                            <button v-show="selected_timeslot !== ''" class="crew-assign">Assign</button>
+                        </div>
+                        <div v-show="staff.available == false" v-for="staff in staff | filterBy check_available | orderBy 'staffName'" class="crew-card {{staff.available}}">
+                            <div class="crew-type">{{staff.allocationType}}</div>
+                            <div class="crew-name">{{staff.staffName}}</div>
+                            <div class="crew-available">{{staff.reason}}</div>
+                            <div class="crew-cnc">{{staff.cncOperator}}</div>
+                            <div class="crew-role">{{staff.projectRole}}</div>
+                            <div class="crew-secrole">{{staff.secondaryRole}}</div>
+                            <div class="crew-forklift">{{staff.forkliftLicense}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <apex:form >
+        <apex:actionFunction name="cloneTimeSlot" action="{!cloneTimeSlot}" onComplete="location.reload();">
+            <apex:param name="draggedList" value=""/>
+            <apex:param name="timeSlot" value="" />
+        </apex:actionFunction>
+            <!--apex:param name="timeSlot" assignTo="{!passedParam2}" value="12345677"/-->
+    </apex:form>
+        
+    
+    <script>
+    //TIAGO MENDES
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    //END TIAGO MENDES
+
+
+
+    // call remoting with an action and optional obj to pass through
+    var _apex = function(action, obj) {
+        // form of a promise
+        return new Promise(function(success, fail) {
+            // if action is 'NA' skip remoting, used for local dev
+            if (action == 'NA') {
+                return success('')
+            }
+            // if there is an obj, pass it, else dont
+            if (obj) {
+                Visualforce.remoting.Manager.invokeAction(action, obj, function(res) {
+                    if (res == 'Error') {
+                        _log(action + ' failed', 'err');
+                        return fail();
+                    }
+                    success(res);
+                })
+            } else {
+                Visualforce.remoting.Manager.invokeAction(action, function(res) {
+                    if (res == 'Error') {
+                        _log(action + ' failed', 'err');
+                        return fail();
+                    }
+                    success(res);
+                })
+            }
+        })
+    }
+    
+    // this allows for an interface between the back-end and the front-end
+    // must be added within an open script tag on the VF page in order to 
+    // access the visualforce object
+    var interfacer = {
+        // called from the front-end, sets the back-end data to the objects in data.js
+        get_data: function() {
+            return new Promise(function(success, fail) {
+                _apex('CrewAndLogisticsGanttChart.getAllProjects').then(function(projects) {
+                    console.log('PROJECTS', projects);
+                    db_projects = projects;
+                    var project_ids = [];
+                    _each(db_projects, function(a) {
+                        project_ids.push(a.projectId)
+                    })
+                    _apex('CrewAndLogisticsGanttChart.getAllStaff').then(function(staff) {
+                        db_staff = staff;
+                        _apex('CrewAndLogisticsGanttChart.getRolePickListValues').then(function(roles) {
+                            db_roles = roles;
+                            _apex('CrewAndLogisticsGanttChart.getAllProjectTimeSlots', project_ids).then(function(timeslots) {
+                                db_timeslots = timeslots;
+                                _apex('CrewAndLogisticsGanttChart.getBankHolidays').then(function(holidays) {
+                                    db_holidays = holidays;
+                                    _apex('CrewAndLogisticsGanttChart.getColorCodes').then(function(colors) {
+                                        db_colors = colors;
+                                        success();
+                                    }).catch(function() {
+                                        fail('PM_LOAD_COLORS');
+                                    })
+                                }).catch(function() {
+                                    fail('PM_LOAD_HOLIDAYS');
+                                })
+                            }).catch(function() {
+                                fail('PM_LOAD_TIMESLOTS');
+                            })
+                        }).catch(function() {
+                            fail('PM_LOAD_ROLES');
+                        })
+                    }).catch(function() {
+                        fail('PM_LOAD_STAFF');
+                    })
+                }).catch(function() {
+                    fail('PM_LOAD_PROJECTS');
+                })
+            })
+        },
+        // called from the front-end, sends the back-end data it needs to upload
+        set_data: function(updateCreate, deletes) {
+            return new Promise(function(success, fail) {
+                _apex('CrewAndLogisticsGanttChart.updateCreateProjectTimeSlots', updateCreate).then(function() {
+                    _apex('CrewAndLogisticsGanttChart.deleteProjectTimeSlots', deletes).then(function() {
+                        return success();
+                    }).catch(function() {
+                        fail('PM_SAVE_DELETES');
+                    })
+                }).catch(function() {
+                    fail('PM_SAVE_UPDATES');
+                })
+            })
+        }
+    }
+    </script>
+     
+    
+    <script src="{!URLFOR($Resource.CLAllocationJS, '/js/_controller.js')}"></script>    
+    
+    </apex:page>

@@ -1,0 +1,184 @@
+<apex:page controller="PurchaseGanttChart" id="purchasechartpage" sidebar="false" showHeader="false" readOnly="true">
+
+  <apex:includeScript value="{!URLFOR($Resource.StockGanttJS, '/js/vue.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.StockGanttJS, '/js/_utility.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.StockGanttJS, '/js/_preprocessor.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.StockGanttJS, '/js/_helper.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.StockGanttJS, '/js/_data.js')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.StockGanttCSS, '/css/app.css')}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+  <meta charset="UTF-8"></meta>
+  <meta name="author" content="Elliott Thurman-Newell <elliott@ceterna.com>"></meta>
+  <title>Stock Gantt</title>
+  <style>
+    .date-column {
+      height: 100vh !important;
+    }
+  </style>
+
+  <div id="vm">
+
+    <!-- Error Page -->
+    <div v-show="error == true">
+      <div class="error-overlay"></div>
+      <div class="error-wrapper">
+        <div class="error-header">Something went wrong!</div>
+        <div class="error-body">
+          There was an issue with saving your changes. Please refresh the page and try again.
+          <br/>
+          <br/> Contact your SFDC Developers and give this reference code: {{error_code}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Page -->
+    <div v-show="loaded == false">
+      <div class="spinner-fullscreen">
+        <table class="spinner-msg">
+          <tr>
+            <td>Loading...</td>
+          </tr>
+        </table>
+        <div class="slds-spinner_container">
+          <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Block -->
+    <div id="control-bar">
+      <!-- Search Bar -->
+      <input v-model="search_query" class="slds-input search-input" placeholder="Search products.." />
+      <img class="control-search" src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/search_60.png')}" />
+      <div id="control-reset" class="control-reset" v-show="search_query != ''" transition="fadeboth">
+        <img src="{!URLFOR($Resource.SLDS, '/assets/icons/utility/clear_60.png')}" />
+      </div>
+      <!-- Toggle Buttons -->
+      <div id="control-confirmed" class="control-checkbutton confirmed {{confirm_toggle}}" v-model="confirm_toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-confirm"></path>
+        </svg>
+      </div>
+      <div id="control-refresh" class="control-checkbutton">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+          <path id="svg-refresh"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Project Details Wrapper -->
+    <div id="projects-wrapper" onscroll="vm.keep_scroll()">
+      <div id="project-row-detail-wrapper">
+        <table class="project-row project-rows-detail">
+          <tr v-for="product in products | orderBy 'difference' | filterBy product_search"  transition="fadeboth" class="project-details-wrapper">
+            <td class="project-details" width="75%">
+              <div class="product-name">{{product.name}}</div>
+            </td>
+            <td class="project-details" width="25%
+            ">
+              <span class="product-code"> [{{product.code}}]</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!-- Scrollable Area -->
+      <div id="project-scroll" onscroll="vm.keep_scroll()">
+        <div id="project-row-time-wrapper">
+          <div v-for="product in products | orderBy 'difference' | filterBy product_search" class="project-row project-rows-time" transition="fadeboth">
+            <!-- Gantt Time Blocks -->
+            <div class="project-times-wrapper">
+              <div v-show="confirm_toggle == true" v-for="time in product.dates" class="project-times" style="margin-left: {{time.left + 'px'}}" transition="fadeboth">
+                {{time.confirmed}}
+              </div>
+              <div v-show="confirm_toggle == false" v-for="time in product.dates" class="project-times" style="margin-left: {{time.left + 'px'}}" transition="fadeboth">
+                {{time.total}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Column Wrapper -->
+    <div id="dates-wrapper">
+      <div id="date-column-wrapper">
+        <div v-for="day in days" id="{{day.Id}}" class="date-column {{day.Today}}">
+          <div class="date-header">
+            <div class="date-month">{{day.Month}}</div>
+            <div class="date-day">{{day.Day}}</div>
+            <div class="date-date">{{day.Date}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Totals Sidebar -->
+    <div id="product-totals">
+      <div class="total-header">
+        Stock Levels
+        <div class="total-actual">Free Stock + On Order</div>
+        <div class="total-total">Balance</div>
+        <div class="total-balance">Total Required</div>
+      </div>
+      <div id="total-list" class="total-list">
+        <div v-for="product in products | orderBy 'difference' | filterBy product_search" class="project-row project-rows-time" transition="fadeboth">
+          <div v-show="confirm_toggle == false" class="product-total">{{product.total_all}}</div>
+          <div v-show="confirm_toggle == true" class="product-total">{{product.total_confirmed}}</div>
+          <div class="product-actual">{{product.stock}}</div>
+          <div class="product-balance">{{product.difference}}</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // call remoting with an action and optional obj to pass through
+    var _apex = function(action, obj) {
+      // form of a promise
+      return new Promise(function(success) {
+        // if action is 'NA' skip remoting, used for local dev
+        if (action == 'NA') {
+          return success('')
+        }
+        // if there is an obj, pass it, else dont
+        if (obj) {
+          Visualforce.remoting.Manager.invokeAction(action, obj, function(res) {
+            if (res == 'Error') {
+              return _log(action + ' failed', 'err')
+            }
+            success(res);
+          })
+        } else {
+          Visualforce.remoting.Manager.invokeAction(action, function(res) {
+            if (res == 'Error') {
+              return _log(action + ' failed', 'err')
+            }
+            success(res);
+          })
+        }
+      })
+    }
+
+    // this allows for an interface between the back-end and the front-end
+    // must be added within an open script tag on the VF page in order to 
+    // access the visualforce object
+    var interfacer = {
+      // called from the front-end, sets the back-end data to the objects in data.js
+      get_data: function() {
+        return new Promise(function(success, fail) {
+          _apex('PurchaseGanttChart.getAllProductDetails').then(function(products) {
+            db_products = products;
+            success();
+          })
+        })
+      }
+    }
+  </script>
+  <script src="{!URLFOR($Resource.StockGanttJS, '/js/_controller.js')}" />
+
+</apex:page>
