@@ -82,17 +82,21 @@ public  with sharing class CrewAndLogisticsGanttChart
 		
 		List<ProjectDetails> projectDetails = new List<ProjectDetails>();
 		
-		List<Project__c> projectList = [SELECT Id, Name, Client_Name__c, Event_Name__c, Project_Manager__c, Project_Manager__r.Name, 	Workshop_Finish_Date_Time__c,
-										Install_Date_Time__c, Install_Finish_Date_Time__c, Derig_Date_Time__c	, Derig_Finish_Date_Time__c, Crew_Chief_1__c, Crew_Chief_1__r.Name,
-										Event_Date_Time__c, Event_Finish_Date_Time__c, Workshop_Start_Date_Time__c, Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c,
-										Crew_Chief_3__r.Name, Lock_Dates__c, Client_Visit_Date__c, Travel_Start_Date__c, Travel_End_Date__c, Total_Labour_Hours_Estimate__c,
-										Install_Year__c, Install_Month__c, Opportunity__r.Total_Quantity_for_Site__c, Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c
-										 FROM Project__c
-										 WHERE (Opportunity__c != NULL)
-										 AND (Opportunity__r.StageName = 'Closed Won')
+		List<Project__c> projectList = [SELECT Id, Name, Client_Name__c, Event_Name__c, Project_Manager__c,
+											Project_Manager__r.Name, Workshop_Finish_Date_Time__c, Install_Date_Time__c,
+											Install_Finish_Date_Time__c, Derig_Date_Time__c	, Derig_Finish_Date_Time__c,
+											Crew_Chief_1__c, Crew_Chief_1__r.Name, Event_Date_Time__c, Event_Finish_Date_Time__c,
+											Workshop_Start_Date_Time__c, Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c,
+											Crew_Chief_3__r.Name, Lock_Dates__c, Client_Visit_Date__c, Travel_Start_Date__c,
+											Travel_End_Date__c, Total_Labour_Hours_Estimate__c, Install_Year__c,
+											Install_Month__c, Opportunity__r.Total_Quantity_for_Site__c,
+											Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c
+										FROM Project__c
+										WHERE (Opportunity__c != NULL)
+										AND (Opportunity__r.StageName = 'Closed Won')
 //										 and (Lock_Dates__c = true)
-										 AND (Install_Date_Time__c >= :historicDate)
-										 AND ((Project_Completed__c = FALSE) OR (Complete__c = FALSE))];
+										AND (Install_Date_Time__c >= :historicDate)
+										AND ((Project_Completed__c = FALSE) OR (Complete__c = FALSE))];
 																 
 		if(projectList != null) {
 			for(Project__c proj : projectList) {
