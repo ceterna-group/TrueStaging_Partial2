@@ -10,10 +10,13 @@ public  with sharing class CrewAndLogisticsGanttChart
 	public static List<StaffInformation> getAllStaff()
 	{
 		List<StaffInformation> staffInfoList = new List<StaffInformation>();
-		List<Staff_List__c> staffList = [Select Id, Name, Status__c, Project_Roles__c, IPAF__c, Driver_s_Licence__c, Forklift_license__c, CNC_Operator__c, Allocation_type__c,	Secondary_Project_Role__c,													
-														(Select RecordTypeId, Date_From__c, Date_to__c, Holiday_Confirmed_available_dates__c From Availability_Holidays__r)
-														from Staff_List__c
-														where Name != null and Status__c ='Active'];
+		List<Staff_List__c> staffList = [SELECT Id, Name, Status__c, Project_Roles__c, IPAF__c, Driver_s_Licence__c,
+											Forklift_license__c, CNC_Operator__c, Allocation_type__c,	Secondary_Project_Role__c,
+											(SELECT RecordTypeId, Date_From__c, Date_to__c, Holiday_Confirmed_available_dates__c
+											FROM Availability_Holidays__r)
+										FROM Staff_List__c
+										WHERE Name != NULL
+										AND Status__c ='Active'];
 														
 		staffInfoList = buildWrapperList(staffList);														
 		return staffInfoList;
@@ -71,29 +74,28 @@ public  with sharing class CrewAndLogisticsGanttChart
 	{
 		Integer months = 14;
 		ProjectHistoricDateInMonths__c hd = ProjectHistoricDateInMonths__c.getInstance(UserInfo.getProfileId());
-		if(hd.HistoricDateInMonths__c != null)
-		{
+		if(hd.HistoricDateInMonths__c != null) {
 			months = Integer.valueOf(hd.HistoricDateInMonths__c);
 		}
+
 		Date historicDate = System.today().addMonths(-months);
 		
 		List<ProjectDetails> projectDetails = new List<ProjectDetails>();
 		
-		List<Project__c> projectList = [Select Id, Name, Client_Name__c, Event_Name__c, Project_Manager__c, Project_Manager__r.Name, 	Workshop_Finish_Date_Time__c, 
-																Install_Date_Time__c, Install_Finish_Date_Time__c, Derig_Date_Time__c	, Derig_Finish_Date_Time__c, Crew_Chief_1__c, Crew_Chief_1__r.Name, 
-																Event_Date_Time__c, Event_Finish_Date_Time__c, Workshop_Start_Date_Time__c, Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c, 
-																Crew_Chief_3__r.Name, Lock_Dates__c, Client_Visit_Date__c, Travel_Start_Date__c, Travel_End_Date__c, Total_Labour_Hours_Estimate__c,
-																Install_Year__c, Install_Month__c, Opportunity__r.Total_Quantity_for_Site__c, Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c
-																 From Project__c
-																 Where (Opportunity__c != null)
-																 and (Opportunity__r.StageName = 'Closed Won')
-//																 and (Lock_Dates__c = true)
-																 and (Install_Date_Time__c >= :historicDate) and ((Project_Completed__c = false) OR (Complete__c = false))];
+		List<Project__c> projectList = [SELECT Id, Name, Client_Name__c, Event_Name__c, Project_Manager__c, Project_Manager__r.Name, 	Workshop_Finish_Date_Time__c,
+										Install_Date_Time__c, Install_Finish_Date_Time__c, Derig_Date_Time__c	, Derig_Finish_Date_Time__c, Crew_Chief_1__c, Crew_Chief_1__r.Name,
+										Event_Date_Time__c, Event_Finish_Date_Time__c, Workshop_Start_Date_Time__c, Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c,
+										Crew_Chief_3__r.Name, Lock_Dates__c, Client_Visit_Date__c, Travel_Start_Date__c, Travel_End_Date__c, Total_Labour_Hours_Estimate__c,
+										Install_Year__c, Install_Month__c, Opportunity__r.Total_Quantity_for_Site__c, Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c
+										 FROM Project__c
+										 WHERE (Opportunity__c != NULL)
+										 AND (Opportunity__r.StageName = 'Closed Won')
+//										 and (Lock_Dates__c = true)
+										 AND (Install_Date_Time__c >= :historicDate)
+										 AND ((Project_Completed__c = FALSE) OR (Complete__c = FALSE))];
 																 
-		if(projectList != null)
-		{
-			for(Project__c proj : projectList)
-			{
+		if(projectList != null) {
+			for(Project__c proj : projectList) {
 				ProjectDetails projD = new ProjectDetails();
 				projD.projectId = proj.Id;
 				projD.projectNumber = proj.Name;
@@ -120,23 +122,20 @@ public  with sharing class CrewAndLogisticsGanttChart
 				projD.totalQuantityforWorkshop = (proj.Opportunity__r.Total_Quantity_for_Workshop__c != null) ? Integer.valueOf(proj.Opportunity__r.Total_Quantity_for_Workshop__c) : 0;
 				
 				Set<String> crewChiefMembers = new Set<String>();
-				if(proj.Crew_Chief_1__c != null)
-				{
+
+				if(proj.Crew_Chief_1__c != null) {
 					crewChiefMembers.add(proj.Crew_Chief_1__r.Name);
 				}
 				
-				if(proj.Crew_Chief_2__c != null)
-				{
+				if(proj.Crew_Chief_2__c != null) {
 					crewChiefMembers.add(proj.Crew_Chief_2__r.Name);
 				}
 				
-				if(proj.Crew_Chief_3__c != null)
-				{
+				if(proj.Crew_Chief_3__c != null) {
 					crewChiefMembers.add(proj.Crew_Chief_3__r.Name);
 				}
 				
-				if(!crewChiefMembers.isEmpty() && crewChiefMembers.size() > 0)
-				{
+				if(!crewChiefMembers.isEmpty() && crewChiefMembers.size() > 0) {
 					projD.crewChiefMembers = crewChiefMembers;
 				}
 				
@@ -149,18 +148,19 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//gets only  bank holidays
 	@RemoteAction
-	public static List<CalenderInformation> getBankHolidays()
-	{
-		List<Calendar_Headlines__c> calenderHeadlineList = [Select Label__c, Headline_Type__c, Start_Date__c, End_Date__c from Calendar_Headlines__c where Label__c != null and Headline_Type__c = 'Holiday'];
+	public static List<CalenderInformation> getBankHolidays() {
+		List<Calendar_Headlines__c> calenderHeadlineList = [SELECT Label__c, Headline_Type__c, Start_Date__c, End_Date__c
+															FROM Calendar_Headlines__c
+															WHERE Label__c != NULL
+															AND Headline_Type__c = 'Holiday'];
 		List<CalenderInformation> calenderInfoList = new List<CalenderInformation>();
-		if(calenderHeadlineList != null && calenderHeadlineList.size() > 0)
-		{
-			for(Calendar_Headlines__c chl : calenderHeadlineList)
-			{
-				CalenderInformation calenderSObj = new CalenderInformation();
-				calenderSObj.holidayName = chl.Label__c;
-				calenderSObj.startDate = chl.Start_Date__c.format();
-				calenderSObj.endDate = chl.End_Date__c.format();
+
+		if(calenderHeadlineList != null && calenderHeadlineList.size() > 0) {
+			for(Calendar_Headlines__c chl : calenderHeadlineList) {
+				CalenderInformation calenderSObj 	= new CalenderInformation();
+				calenderSObj.holidayName 			= chl.Label__c;
+				calenderSObj.startDate 				= chl.Start_Date__c.format();
+				calenderSObj.endDate 				= chl.End_Date__c.format();
 				calenderInfoList.add(calenderSObj);
 			}
 		}
@@ -170,13 +170,11 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//gets the colour code to display on the screen. This is retrieved from custom settings.
 	@RemoteAction
-	public static ColourCodes getColorCodes()
-	{
+	public static ColourCodes getColorCodes() {
 		List<CustomColorCodes__c> colorList = CustomColorCodes__c.getAll().values();
 		ColourCodes ccSobj = new ColourCodes();
 	
- 		if(colorList != null && colorList.size() > 0)
-		{
+ 		if(colorList != null && colorList.size() > 0) {
 			ccSobj.workshop = (colorList[0].Workshop__c != null) ? colorList[0].Workshop__c : Label.workshopDefaultColour;
 			ccSobj.derig = (colorList[0].Derig__c != null) ? colorList[0].Derig__c : Label.derigDefaultColour;
 			ccSobj.install = (colorList[0].Install__c != null) ? colorList[0].Install__c : Label.installDefaultColour;
@@ -184,69 +182,63 @@ public  with sharing class CrewAndLogisticsGanttChart
 			ccSobj.travel = (colorList[0].Travel__c != null) ? colorList[0].Travel__c : Label.travelDefaultColour;
 			ccSobj.events_Event = (colorList[0].eventEvent__c != null) ? colorList[0].eventEvent__c : Label.eventEventsDefaultColour;
 			ccSobj.events_Holiday = (colorList[0].eventHoliday__c != null) ? colorList[0].eventHoliday__c : Label.eventHolidayDefaultColour;
- 		}
- 		else
- 		{
-			ccSobj.workshop = Label.workshopDefaultColour;
-			ccSobj.derig = Label.derigDefaultColour;
-			ccSobj.install = Label.installDefaultColour;
-			ccSobj.event = Label.eventDefaultColour;
-			ccSobj.travel = Label.travelDefaultColour;
-			ccSobj.events_Event = Label.eventEventsDefaultColour;
-			ccSobj.events_Holiday = Label.eventHolidayDefaultColour;
+ 		} else {
+			ccSobj.workshop 		= Label.workshopDefaultColour;
+			ccSobj.derig 			= Label.derigDefaultColour;
+			ccSobj.install 			= Label.installDefaultColour;
+			ccSobj.event 			= Label.eventDefaultColour;
+			ccSobj.travel 			= Label.travelDefaultColour;
+			ccSobj.events_Event 	= Label.eventEventsDefaultColour;
+			ccSobj.events_Holiday 	= Label.eventHolidayDefaultColour;
  		}
 		return ccSobj;		
 	}
 	
 	//gets the project time slots based on projectIds along with allocated resource.
 	@RemoteAction
-	public static List<ProjectTimeSlots> getAllProjectTimeSlots(List<String> projectIds)
-	{
+	public static List<ProjectTimeSlots> getAllProjectTimeSlots(List<String> projectIds) {
 		
-		List<ProjectTimeSlots> projTimeSlotsList = new List<ProjectTimeSlots>();
-		List<Project_Time_Slots__c> projTimeSlotsSObjList  = new List<Project_Time_Slots__c>();
+		List<ProjectTimeSlots> projTimeSlotsList 			= new List<ProjectTimeSlots>();
+		List<Project_Time_Slots__c> projTimeSlotsSObjList  	= new List<Project_Time_Slots__c>();
 		
-		if(projectIds != null && projectIds.size() > 0)
-		{
-			projTimeSlotsSObjList = [Select Title__c, Type__c, Start_Time__c, Project__c, Project__r.Event_Name__c, Name, Id, Finish_Time__c, 
-														(Select Staff_List__c, Assigned_Role__c From Labour_Truck_Allocation__r) 
-														From Project_Time_Slots__c 
-														where Project__c In :projectIds];
+		if(projectIds != null && projectIds.size() > 0) {
+			projTimeSlotsSObjList = [SELECT Title__c, Type__c, Start_Time__c, Project__c, Project__r.Event_Name__c,
+											Name, Id, Finish_Time__c,
+											(SELECT Staff_List__c, Assigned_Role__c FROM Labour_Truck_Allocation__r)
+									FROM Project_Time_Slots__c
+									WHERE Project__c IN :projectIds];
 		}
 		
-		if(projTimeSlotsSObjList != null && projTimeSlotsSObjList.size() > 0)
-		{												
-			for(Project_Time_Slots__c pts : projTimeSlotsSObjList)
-			{
+		if(projTimeSlotsSObjList != null && projTimeSlotsSObjList.size() > 0) {
+
+			for(Project_Time_Slots__c pts : projTimeSlotsSObjList) {
+
 				System.debug(pts.Id);
 				System.debug(pts);
-				ProjectTimeSlots sobj = new ProjectTimeSlots();
-				sobj.projectId = pts.Project__c;
-				sobj.projectTSId = pts.Id;
-				if(pts.Project__c != null) sobj.projectName = pts.Project__r.Event_Name__c;
+				ProjectTimeSlots sobj 	= new ProjectTimeSlots();
+				sobj.projectId 			= pts.Project__c;
+				sobj.projectTSId 		= pts.Id;
 
+				if(pts.Project__c != null) sobj.projectName = pts.Project__r.Event_Name__c;
 				if(pts.Start_Time__c != null) sobj.projTSDate = pts.Start_Time__c.date().format();
-				
 				if(pts.Start_Time__c != null) sobj.projTSStartTime = String.valueOf(pts.Start_Time__c.hour())+':'+String.valueOf(pts.Start_Time__c.minute());
 				if(pts.Finish_Time__c != null) sobj.projTSFinishTime = String.valueOf(pts.Finish_Time__c.hour())+':'+String.valueOf(pts.Finish_Time__c.minute());
 				if(pts.Type__c != null) sobj.projTSType = pts.Type__c;
 				if(pts.Title__c != null) sobj.projTSTitle = pts.Title__c;
                 
 				List<Labour_Truck_Allocation__c> labourList = pts.Labour_Truck_Allocation__r;    //staff allocation object
-				if(labourList != null && labourList.size() > 0)
-				{
+				if(labourList != null && labourList.size() > 0) {
+
 					List<LabourAllocation> labourAllocList = new List<LabourAllocation>();
-					for(Labour_Truck_Allocation__c labourRecord : labourList)
-					{
+
+					for(Labour_Truck_Allocation__c labourRecord : labourList) {
 						LabourAllocation childObj = new LabourAllocation();
-						
 						if(labourRecord.Staff_List__c != null) childObj.staffId = labourRecord.Staff_List__c;
 						if(labourRecord.Assigned_Role__c != null) childObj.assignedRole = labourRecord.Assigned_Role__c;
 						labourAllocList.add(childObj);
 					}
 					
-					if(!labourAllocList.isEmpty() && labourAllocList.size() > 0)
-					{
+					if(!labourAllocList.isEmpty() && labourAllocList.size() > 0) {
 						sobj.labourAllocationList = labourAllocList;
 					}					
 				}
@@ -389,96 +381,98 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//update/Creating project time slots and staff allocation.
 	@RemoteAction
-	public static String updateCreateProjectTimeSlots(List<UpdateProjectTimeSlots> dirtyProjectTimeSlots)
-	{
-		if(dirtyProjectTimeSlots != null && dirtyProjectTimeSlots.size() > 0)
-		{
-			List<String> projectTSIds = new List<String>();
-			List<Labour_Truck_Allocation__c> childListToInsert = new List<Labour_Truck_Allocation__c>();
-			List<Project_Time_Slots__c> parentListToInsert = new List<Project_Time_Slots__c>();
+	public static String updateCreateProjectTimeSlots(List<UpdateProjectTimeSlots> dirtyProjectTimeSlots) {
+
+		System.debug('trying to create some timeslots');
+		system.debug('objects sent to this method are ' + dirtyProjectTimeSlots);
+
+		if(dirtyProjectTimeSlots != null && dirtyProjectTimeSlots.size() > 0) {
+
+			system.debug('found some entries to create');
+
+			List<String> projectTSIds 							= new List<String>();
+			List<Labour_Truck_Allocation__c> childListToInsert 	= new List<Labour_Truck_Allocation__c>();
+			List<Project_Time_Slots__c> parentListToInsert 		= new List<Project_Time_Slots__c>();
 			
-			for(UpdateProjectTimeSlots timeSlotsObj : dirtyProjectTimeSlots)
-			{
-				if(timeSlotsObj.projTSId.toLowerCase() == 'noid')  //if projTSID == 'noid' then is considered as new project time slot else its a existing time slots
-				{
+			for(UpdateProjectTimeSlots timeSlotsObj : dirtyProjectTimeSlots) {
+
+				system.debug('iterating through a timeslot');
+
+				//if projTSID == 'noid' then is considered as new project time slot else its a existing time slots
+				if(timeSlotsObj.projTSId.toLowerCase() == 'noid') {
+
+					system.debug('timeslot has no id');
+
+
 					String uniqueId = String.valueOf(System.now().getTime());
 					
 					Project_Time_Slots__c parentReference = new Project_Time_Slots__c(CodeExternalID__c = uniqueId);
                     
 					if( timeSlotsObj.startTime >  timeSlotsObj.finishTime){
-						/*list<String> dates = String.valueOf(timeSlotsObj.projTSDate).split('/');
-						list<String> hoursStart = String.valueOf(timeSlotsObj.startTime).split(':');
-						list<String> hoursFinish = String.valueOf(timeSlotsObj.finishTime).split(':');
-
-						DateTime dtStart = DateTime.newInstance(Integer.valueOf(dates[2]), Integer.valueOf(dates[1]), Integer.valueOf(dates[0]), Integer.valueOf(hoursStart[0]), Integer.valueOf('00'), Integer.valueOf('00'));
-			
-						DateTime dtFinish = DateTime.newInstance(Integer.valueOf(dates[2]), Integer.valueOf(dates[1]), Integer.valueOf(dates[0]), Integer.valueOf(hoursFinish[0]), Integer.valueOf('00'), Integer.valueOf('00'));*/
 
 						Project_Time_Slots__c newParentPTS = new Project_Time_Slots__c(
-						Project__c = timeSlotsObj.projectId,
-						Start_Time__c = Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.startTime),
-						Finish_Time__c = Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.finishTime).addDays(1),
-						Type__c = timeSlotsObj.projTSType,
-                        Title__c = timeSlotsObj.projTSTitle,
-						CodeExternalID__c = uniqueId
+							Project__c 			= timeSlotsObj.projectId,
+							Start_Time__c 		= Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.startTime),
+							Finish_Time__c 		= Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.finishTime).addDays(1),
+							Type__c 			= timeSlotsObj.projTSType,
+							Title__c 			= timeSlotsObj.projTSTitle,
+							CodeExternalID__c 	= uniqueId
 						);
 
 						parentListToInsert.add(newParentPTS);
 
 					} else {
 						Project_Time_Slots__c newParentPTS = new Project_Time_Slots__c(
-						Project__c = timeSlotsObj.projectId,
-						Start_Time__c = Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.startTime),
-						Finish_Time__c = Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.finishTime),
-						Type__c = timeSlotsObj.projTSType,
-                        Title__c = timeSlotsObj.projTSTitle,
-						CodeExternalID__c = uniqueId
+							Project__c 			= timeSlotsObj.projectId,
+							Start_Time__c 		= Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.startTime),
+							Finish_Time__c 		= Datetime.parse(timeSlotsObj.projTSDate +' '+timeSlotsObj.finishTime),
+							Type__c 			= timeSlotsObj.projTSType,
+							Title__c 			= timeSlotsObj.projTSTitle,
+							CodeExternalID__c 	= uniqueId
 						);
 
 						parentListToInsert.add(newParentPTS);
 					}
 				
-					if(timeSlotsObj.crewMembers != null && timeSlotsObj.crewMembers.size() > 0)
-					{
+					if(timeSlotsObj.crewMembers != null && timeSlotsObj.crewMembers.size() > 0) {
 						List<CreateLabourAllocation> childList = timeSlotsObj.crewMembers;
 						for(CreateLabourAllocation childLA : childList)
 						{
 							Labour_Truck_Allocation__c childSobj = new Labour_Truck_Allocation__c(
-								Project_Time_Slots__r = parentReference,
-								Staff_List__c = childLA.staffId,
-								Assigned_Role__c = childLA.assignedRole
+								Project_Time_Slots__r 	= parentReference,
+								Staff_List__c 			= childLA.staffId,
+								Assigned_Role__c 		= childLA.assignedRole
 							);
 							
 							childListToInsert.add(childSobj);
 						}
 					}					
 				}
-				else
-				{
+				else {
 					projectTSIds.add(timeSlotsObj.projTSId);					
 				}
 			}
 			
-			if(!projectTSIds.isEmpty())
-			{
-				List<Labour_Truck_Allocation__c> deleteChildList = [Select Id, Project_Time_Slots__c from Labour_Truck_Allocation__c where Project_Time_Slots__c In :projectTSIds];
+			if(!projectTSIds.isEmpty()) {
+				List<Labour_Truck_Allocation__c> deleteChildList = [SELECT Id, Project_Time_Slots__c
+																	FROM Labour_Truck_Allocation__c
+																	WHERE Project_Time_Slots__c IN :projectTSIds];
 				
 				if(deleteChildList != null && deleteChildList.size() > 0) delete deleteChildList;			
 			}
 			
-			for(UpdateProjectTimeSlots existingTimeSlotsObj : dirtyProjectTimeSlots)
-			{
-				if(existingTimeSlotsObj.projTSId != '' && existingTimeSlotsObj.projTSId != null && existingTimeSlotsObj.projTSId.toLowerCase() != 'noid')
-				{
-					if(existingTimeSlotsObj.crewMembers != null && existingTimeSlotsObj.crewMembers.size() > 0)
-					{
+			for(UpdateProjectTimeSlots existingTimeSlotsObj : dirtyProjectTimeSlots) {
+				if(existingTimeSlotsObj.projTSId != '' && existingTimeSlotsObj.projTSId != null
+						&& existingTimeSlotsObj.projTSId.toLowerCase() != 'noid') {
+					if(existingTimeSlotsObj.crewMembers != null && existingTimeSlotsObj.crewMembers.size() > 0) {
+
 						List<CreateLabourAllocation> childList = existingTimeSlotsObj.crewMembers;
-						for(CreateLabourAllocation childLA : childList)
-						{
+
+						for(CreateLabourAllocation childLA : childList) {
 							Labour_Truck_Allocation__c childSobj = new Labour_Truck_Allocation__c(
-								Project_Time_Slots__c = existingTimeSlotsObj.projTSId,
-								Staff_List__c = childLA.staffId,
-								Assigned_Role__c = childLA.assignedRole
+								Project_Time_Slots__c 	= existingTimeSlotsObj.projTSId,
+								Staff_List__c 			= childLA.staffId,
+								Assigned_Role__c 		= childLA.assignedRole
 							);
 							
 							childListToInsert.add(childSobj);
@@ -489,14 +483,11 @@ public  with sharing class CrewAndLogisticsGanttChart
 				
 			Savepoint sp = Database.setSavepoint();
             
-			try
-			{
-               
-				if(!parentListToInsert.isEmpty())  insert parentListToInsert;				
+			try {
+				if(!parentListToInsert.isEmpty())  insert parentListToInsert;
 				if(!childListToInsert.isEmpty())  insert childListToInsert;					
 			}
-			catch(Exception e)
-			{
+			catch(Exception e) {
                 Database.rollback(sp);
 				System.debug('error while creating project time slot: '+e);
 				return fail;

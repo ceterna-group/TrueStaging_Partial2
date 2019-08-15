@@ -407,6 +407,8 @@
             // if there is an obj, pass it, else dont
             if (obj) {
                 Visualforce.remoting.Manager.invokeAction(action, obj, function(res) {
+                    console.log('res for ' + action);
+                    console.log(res);
                     if (res == 'Error') {
                         _log(action + ' failed', 'err');
                         return fail();
@@ -415,6 +417,8 @@
                 })
             } else {
                 Visualforce.remoting.Manager.invokeAction(action, function(res) {
+                    console.log('res for ' + action);
+                    console.log(res);
                     if (res == 'Error') {
                         _log(action + ' failed', 'err');
                         return fail();

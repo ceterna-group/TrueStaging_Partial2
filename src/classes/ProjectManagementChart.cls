@@ -38,6 +38,7 @@ public with sharing class ProjectManagementChart {
         (Opportunity__c != null) AND
         ((Project_Completed__c = false) OR (Complete__c = false)) AND
         (Opportunity__r.StageName != :stageClosedLost) AND
+        (Opportunity__r.StageName != NULL) AND
         ((Install_Date_Time__c >= :historicDate) OR (Install_Date_Time__c = null))
     ];
     List<Map<String, Object>> projectInfoList = buildWrapperList(projectList);    
