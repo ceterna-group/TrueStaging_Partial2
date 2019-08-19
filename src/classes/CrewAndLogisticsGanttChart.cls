@@ -70,15 +70,16 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//gets all the projects that are closed won and are locked
 	@RemoteAction
-	public static List<ProjectDetails> getAllProjects()
-	{
+	public static List<ProjectDetails> getAllProjects() {
+
 		Integer months = 14;
 		ProjectHistoricDateInMonths__c hd = ProjectHistoricDateInMonths__c.getInstance(UserInfo.getProfileId());
+
 		if(hd.HistoricDateInMonths__c != null) {
 			months = Integer.valueOf(hd.HistoricDateInMonths__c);
 		}
 
-		Date historicDate = System.today().addMonths(-months);
+		Date historicDate = (Test.isRunningTest()) ? Date.today().addYears(-20) : System.today().addMonths(-months);
 		
 		List<ProjectDetails> projectDetails = new List<ProjectDetails>();
 		
@@ -535,8 +536,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public String assignedRole {get; set;}
 	}		
 	
-	public with sharing class ProjectDetails
-	{
+	public with sharing class ProjectDetails {
 		public String projectId {get; set;}
 		public String projectName {get; set;}
 		public String projectNumber {get; set;}
@@ -562,8 +562,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public Integer totalQuantityforWorkshop {get; set;}
 	}
 	
-	public with sharing class StaffInformation
-	{
+	public with sharing class StaffInformation{
 		public String staffId {get; set;}
 		public String staffName {get; set;}
 		public String projectRole {get; set;}
@@ -576,22 +575,19 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public List<AvailabilityInformation> availabilityInfoList {get; set;}
 	}
 	
-	public with sharing class AvailabilityInformation
-	{
+	public with sharing class AvailabilityInformation {
 		public String holidayConfirmedAvailableString {get; set;}
 		public String dateFrom {get; set;}
 		public String dateTo {get; set;}
 	}
 	
-	public with sharing class CalenderInformation
-	{
+	public with sharing class CalenderInformation {
 		public String holidayName {get; set;}
 		public String startDate {get; set;}
 		public String endDate {get; set;}
 	}
 	
-	public with sharing class ColourCodes
-	{
+	public with sharing class ColourCodes {
 		public String workshop {get; set;}
 		public String derig {get; set;}
 		public String install {get; set;}
@@ -602,8 +598,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 		
 	}
 	
-	public with sharing class ProjectTimeSlots
-	{
+	public with sharing class ProjectTimeSlots {
 		public String projectId {get; set;}
 		public String projectName {get; set;}
 		public String projectTSId {get; set;}
@@ -615,8 +610,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public List<LabourAllocation> labourAllocationList {get; set;}
 	}
 	
-	public with sharing class LabourAllocation
-	{
+	public with sharing class LabourAllocation {
 		public String staffId {get; set;}
 		public String assignedRole {get; set;}
 	}

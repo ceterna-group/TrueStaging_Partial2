@@ -156,8 +156,10 @@
                                 <div class="project-info" style="padding:10px 0 0 4px; font-size: 14px">
                                     {{ replacer(proj.additional_info) }}
                                 </div>
-                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-pm project-initial-label">Project Manager: <span class="project-initials">{{proj.project_manager}}</span></div>
-                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-cc project-initial-label">Crew Chief/s: <span class="project-initials">{{proj.crew_chiefs}}</span></div>
+                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'"
+                                     class="project-pm project-initial-label">Project Manager: <span class="project-initials">{{proj.project_manager}}</span></div>
+                                <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'"
+                                     class="project-cc project-initial-label">Crew Chief/s: <span class="project-initials">{{proj.crew_chiefs}}</span></div>
                            
                            </div>
                          
@@ -169,14 +171,42 @@
             <!-- Scrollable Area -->
             <div id="project-scroll" onscroll="vm.keep_scroll()">
                 <div id="project-row-time-wrapper">
-                    <div v-for="proj in projects | orderBy 'year' 'order_month' 'order_install' | filterBy filter_projects" class="project-row project-rows-time {{proj.month}}{{proj.year}}slotsCollapse {{proj.seperator}} {{proj.selected}} {{proj.no_dates}} {{proj.selected_row}} {{proj.is_locked + 'lock'}}" transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
+                    <div v-for="proj in projects | orderBy 'year' 'order_month' 'order_install' | filterBy filter_projects"
+                         class="project-row project-rows-time {{proj.month}}{{proj.year}}slotsCollapse {{proj.seperator}}
+                                {{proj.selected}} {{proj.no_dates}} {{proj.selected_row}} {{proj.is_locked + 'lock'}}"
+                         transition='fadeout' v-show="invoice_toggle != true && deposit_toggle != true || invoice_toggle == true && proj.is_invoiced != true || deposit_toggle == true && proj.is_deposited != true">
                         <!-- Gantt Time Blocks -->
                         <div class="project-times-wrapper">
+
                             <div v-for="time in proj.types" class="project-times" style="margin-left: {{time.left_position}}; width: {{time.gantt_width}}">
-                                <div v-for="slot in time.slots" class="project-time-slot {{ slot.timeslots.length == 0 ? 'slot_empty' : '' }}" style="background: {{time.color}}" draggable="true" 
-                                 ondragover="allowDrop(event)">
-      								<span style="font-weight: bold; font-size: 12px;">{{slot.slot_title}}</span><br/>
-                                    <span>{{slot.workerlist}}</span>
+
+                                <div v-for="slot in time.slots" class="project-time-slot {{ slot.timeslots.length == 0 ? 'slot_empty' : 'slot_filled' }}"
+                                     style="background: {{time.color}};" draggable="true" ondragover="allowDrop(event)">
+
+<!--                                    <template v-if="slot.timeslots">-->
+<!--                                        <div class="slot_filled">-->
+
+<!--                                        </div>-->
+
+<!--                                    </template>-->
+
+                                    <template v-if="slot.timeslots">
+
+                                        <div class="expandable">
+                                            <template v-for="slotGroup in slot.timeslots">
+                                                <span>
+                                                    <div style="border-bottom: 0.5px solid white;">
+                                                        <span style="font-weight: bold; font-size: 12px;">{{ slotGroup.projTSTitle  ? slotGroup.projTSTitle + ':' : 'Untitled:'}}</span>
+                                                        <template v-for="int in slotGroup.labourAllocationList.length">
+                                                            <span>{{slotGroup.labourAllocationList[int].name + '' + ((int + 1 != slotGroup.labourAllocationList.length) ? ', ' : '')}}</span>
+                                                        </template>
+                                                    </div>
+                                                </span>
+                                            </template>
+                                        </div>
+
+                                    </template>
+
                                     <div class="slot-truck {{slot.truck}}">
                                         {{slot.truck_total}}
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">

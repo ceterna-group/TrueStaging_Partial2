@@ -919,20 +919,26 @@ button.control-save[disabled] {
 }
 
 .project-time-slot {
+  
   float: left;
+  position: relative;
+
   width: 200px;
   height: 80px;
-  position: relative;
+
   box-sizing: border-box;
   border-left: 1px solid rgba(0,0,0,0.1);
   cursor: pointer;
   padding: 23px 5px;
   text-align: left;
   line-height: 13px;
+
+  overflow: visible;
+
 }
 
 .project-time-slot:after {
-  content: '';
+  /*content: '';*/
   position: absolute;
   left: 0;
   top: 0;
@@ -944,6 +950,20 @@ button.control-save[disabled] {
   transition: background 0.3s;
   pointer-events: none;
 }
+
+.expandable:hover {
+  position: relative;
+  z-index: 10000;
+  background-color: inherit;
+  padding: 5px;
+  padding-top: 0;
+  margin-left: -5px;
+  width: 100%;
+}
+
+
+/*.slot_filled:hover {*/
+/*}*/
 
 .project-time-slot:hover:after {
   background: rgba(0,0,0,0.1);

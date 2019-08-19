@@ -186,23 +186,36 @@ var vm = new Vue({
             // set the width of the block based on the distance of the start and end
             tObj['slots'] = [];
             // work out the number of days that the type ranges
-            var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0 + 'px';
+
+            // var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0 + 'px';
+
+            var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0;
+
+            // var daysLength = a[b + 'StartDate'] ? 50 : 0;
+
+            // var daysLength = 5;
             // for each of these days we create a slot
 
             // var earliestDate = vh.daterize(Math.min.apply(Math, _solo(dArr)));
             // var latestDate = vh.daterize(Math.max.apply(Math, _solo(dArr)));
 
 
-            console.log('timeslots is ');
-            console.log(vm.timeslots);
+            // console.log('timeslots is ');
+            // console.log(vm.timeslots);
 
             for (var x = 0; x < daysLength; x++) {
               // get the start date, type, id, title
-              var startDate = a[b + 'StartDate'];
-              var slot_type = b.charAt(0).toUpperCase() + b.slice(1);
-              var slot_id = a.projectId ? a.projectId : 'VOID';
-              var slot_project = a.projectName ? a.projectName : 'VOID';
+              var startDate     = a[b + 'StartDate'];
+              var slot_type     = b.charAt(0).toUpperCase() + b.slice(1);
+              var slot_id       = a.projectId ? a.projectId : 'VOID';
+              var slot_project  = a.projectName ? a.projectName : 'VOID';
               // calculate the day of the slot, based on start date + number of the loop
+
+
+              console.log('timeslot');
+              console.log(vm.timeslots);
+
+
               var next_day = vh.next_day(startDate, x);
               // find where there is a timeslot matching the id, type and date combination
               var time_slots = _find(vm.timeslots, {
@@ -210,20 +223,29 @@ var vm = new Vue({
                   projTSType: slot_type,
                   projTSDate: next_day
               });
-                // set some variables to defaults
-              var workers = [];
+
+
+
+
+
+              // set some variables to defaults
+              var workers       = [];
               var stringWorkers = '';
-              var truck = false;
-              var total_hours = 0;
-              var truck_no = 0;
-              var s_title = '';
+              var truck         = false;
+              var total_hours   = 0;
+              var truck_no      = 0;
+              var s_title       = '';
               
               // if there are timeslots
               if (time_slots !== 'NO MATCH') {
                 // for each timeslot
                 // console.log('slots 2');
                 _each(time_slots, function (y) {
-                  if (y.toDelete == false) {  
+
+                  console.log('slot for');
+                  console.log(y.projectName);
+
+                  if (y.toDelete === false) {
                     // set a total people variable initally to 0;
                     var total_people = 0;
                     // for each person allocated to the slot
@@ -238,19 +260,19 @@ var vm = new Vue({
                         // find their related staff credentials
                         var worker = _find(vm.staff, {
                             staffId: z.staffId
-                          })
+                          });
                           // if there are workers
                         if (worker !== 'NO MATCH') {
                           // if there is a truck, set truck to true, and add to the truck number
                           // push the name and add to people total
                           // console.log('workers');
                           _each(worker, function (v) {
-                            if (v.allocationType == 'Truck') {
+                            if (v.allocationType === 'Truck') {
                               truck = true;
                               truck_no += 1
                             }
                             workers.push(v.staffName);
-                            if (v.allocationType != 'Truck') {
+                            if (v.allocationType !== 'Truck') {
                               total_people += 1
                             }
                           })
@@ -258,7 +280,7 @@ var vm = new Vue({
                           // if user has been set inactive we have nothing on them
                           workers.push('INACTIVE USER');
                         }
-                      })
+                      });
                       // work out the hours of the timeslot, then times by the number of people (not trucks)
                       if((Number(y.projTSFinishTime.split(':')[0]) > Number(y.projTSStartTime.split(':')[0]))){
 
@@ -275,14 +297,14 @@ var vm = new Vue({
                         s_title = y.projTSTitle;
                       }
                   }
-                })
+                });
 
                 // for each of the worker names we pushed, dedupe them and get the length;
                 var allWorkers = _solo(workers);
                 var allWorkersLength = allWorkers.length;
                 // for each worker, create a list of names to show on the slot, adding commas if needed
                 for (var w = 0; w < allWorkersLength; w++) {
-                  var comma = w == 0 && allWorkers.length == 1 || w == allWorkers.length - 1 ? '' : ', ';
+                  var comma = w === 0 && allWorkers.length === 1 || w === allWorkers.length - 1 ? '' : ', ';
                   stringWorkers += allWorkers[w] + comma;
                 }
               } else {
@@ -298,15 +320,21 @@ var vm = new Vue({
                 project: slot_id,
                 project_name: slot_project,
                 total: total_hours,
-                workerlist: stringWorkers,
                 timeslots: time_slots,
-                slot_title: s_title
+
+                slot_title: s_title,
+                workerlist: stringWorkers,
+
+                // todo: NEW
+                margin_left: '100px',
+                slots_mini : 'something'
+
               };
               tObj['slots'].push(sObj);
             }
             // get the width of the type slot
             tObj['gantt_width'] = a[b + 'StartDate'] ?
-              _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length == 0 ?
+              _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length === 0 ?
               100 + 'px' : (_date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length) * 200 + 'px' : 0 + 'px';
             // if there was a date, add it to a list of all dates
             if (a[b + 'StartDate']) {
@@ -314,7 +342,7 @@ var vm = new Vue({
             }
             // add to project object
             dObj[b] = tObj;
-          })
+          });
           nObj['types'] = dObj;
           // push new project to vue
           vm.projects.push(nObj);
@@ -326,7 +354,7 @@ var vm = new Vue({
       // create an empty project for each possibly month to use as seperators
       // console.log('solo');
       _each(_solo(mArr), function (a) {
-          fObj = {}
+          fObj = {};
             // set month, year, and set that its a seperator for css purposes
           fObj['month'] = a.split(' ')[0];
           fObj['year'] = a.split(' ')[1];
@@ -415,7 +443,14 @@ var vm = new Vue({
       // set today position
       vm.set_today();
       // load totals
-      vh.redo_slots();
+
+
+      // todo: changed
+      // vh.redo_slots();
+
+
+
+      // 'load' frontend
       // 'load' frontend
       setTimeout(function () {
         vm.loaded = true;
@@ -583,10 +618,10 @@ var vm = new Vue({
     deselect_timeslots: function () {
       _each(vm.timeslots, function (a) {
         a.selected = false;
-      })
+      });
       _each(vm.selected_slot.timeslots, function (b) {
         b.selected = false;
-      })
+      });
       vm.selected_timeslot = '';
     },
     // deselects all projs
@@ -642,7 +677,7 @@ var vm = new Vue({
       if (timeslot.labourAllocationList) {
         _each(timeslot.labourAllocationList, function (a, b) {
           if (a) {
-            if (a.staffId == id) {
+            if (a.staffId === id) {
               timeslot.labourAllocationList.splice(b, 1);
             }
           }
@@ -667,7 +702,7 @@ var vm = new Vue({
         type: crew.allocationType,
         staffId: crew.staffId,
         assignedRole: crew.projectRole ? crew.projectRole : 'Transport',
-      }
+      };
       vm.selected_timeslot.labourAllocationList.push(newcrew);
       vm.selected_timeslot.toUpdate = true;
       vh.redo_slots();

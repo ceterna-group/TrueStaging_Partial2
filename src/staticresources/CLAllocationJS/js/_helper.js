@@ -330,25 +330,25 @@ var vh = {
                 var s_titles = [];
                 var s_title = '';
                 _each(c.timeslots, function (d) {
-                    if (d.toDelete == false) {
+                    if (d.toDelete === false) {
                       var total_people = 0;
                       // for each person allocated to the slot
                       _each(d.labourAllocationList, function (z) {
                           // find their related staff credentials
                           var worker = _find(vm.staff, {
                               staffId: z.staffId
-                            })
+                            });
                             // if there are workers
                           if (worker !== 'NO MATCH') {
                             // if there is a truck, set truck to true, and add to the truck number
                             // push the name and add to people total
                             _each(worker, function (v) {
-                              if (v.allocationType == 'Truck') {
+                              if (v.allocationType === 'Truck') {
                                 truck = true;
                                 truck_no += 1
                               }
                               workers.push(v.staffName);
-                              if (v.allocationType != 'Truck') {
+                              if (v.allocationType !== 'Truck') {
                                 total_people += 1
                               }
                             })
@@ -378,7 +378,7 @@ var vh = {
                       }
                       
                     }
-                  })
+                  });
 
                    // for each of the s_titles we pushed, dedupe them and get the length;
                 var allTitles = _solo(s_titles);
@@ -403,11 +403,11 @@ var vh = {
                   var comma = w == 0 && allWorkers.length == 1 || w == allWorkers.length - 1 ? '' : ', ';
                   stringWorkers += allWorkers[w] + comma;
                 }
-                c.truck = truck;
+                c.truck       = truck;
                 c.truck_total = truck_no;
-                c.total = total_hours;
-                c.workerlist = stringWorkers;
-                c.slot_title = s_title;
+                c.total       = total_hours;
+                c.workerlist  = stringWorkers;
+                c.slot_title  = s_title;
               })
 
             }

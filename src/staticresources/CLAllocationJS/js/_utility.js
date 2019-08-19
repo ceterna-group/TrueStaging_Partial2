@@ -33,11 +33,21 @@ function _find(a, b) {
   var d = [];
   var e = '';
   for (e in b) {
+
+    // console.log('when e is');
+    // console.log(e);
+    // console.log('b[e] is');
+    // console.log(b[e]);
+
     c.push({
       f: e,
       g: b[e]
-    })
+    });
   }
+
+  // console.log('end result is');
+  // console.log(c);
+
   _each(a, function (h) {
     var i = 0;
     var j = '';

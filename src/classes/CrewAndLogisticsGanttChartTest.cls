@@ -1,8 +1,7 @@
 @isTest
-private class CrewAndLogisticsGanttChartTest 
-{
-    static testMethod void testGetAllStaff()
-    {
+private class CrewAndLogisticsGanttChartTest {
+
+    static testMethod void testGetAllStaff() {
         Staff_List__c staffSobj1 = new Staff_List__c( 
             Name = 'Employee person 1',
             Forklift_license__c = true,
@@ -35,15 +34,15 @@ private class CrewAndLogisticsGanttChartTest
         insert new List<Staff_List__c>{staffSobj1, staffSobj2, staffSobj3};
         
         Availability_Holidays__c availHol2 = new Availability_Holidays__c( 
-            Date_From__c= Date.newInstance( 2016, 06, 01), 
-            Date_to__c = Date.newInstance( 2016, 06, 30), 
+            Date_From__c= Date.newInstance( 2019, 06, 01),
+            Date_to__c = Date.newInstance( 2019, 06, 30),
             Holiday_Confirmed_available_dates__c = 'Holiday/Absence', 
             Staff_List__c = staffSobj2.Id
         );
         
         Availability_Holidays__c availHol3 = new Availability_Holidays__c( 
-            Date_From__c= Date.newInstance( 2016, 06, 01), 
-            Date_to__c = Date.newInstance( 2016, 06, 30), 
+            Date_From__c= Date.newInstance( 2019, 06, 01),
+            Date_to__c = Date.newInstance( 2019, 06, 30),
             Holiday_Confirmed_available_dates__c = 'Confirmed Available (freelance only)', 
             Staff_List__c = staffSobj3.Id
         );
@@ -83,77 +82,83 @@ private class CrewAndLogisticsGanttChartTest
         Account acc = new Account(Name='Test Account');
         insert acc;
         
-        Opportunity opp = new Opportunity(Name = 'Test Opp', AccountId=acc.Id, StageName='Closed Won', CloseDate=System.today(), Expected_Install_Month__c = 'June', Year__c = String.valueOf(System.today().Year()));
+        Opportunity opp = new Opportunity(
+            Name            = 'Test Opp',
+            AccountId       =acc.Id,
+            StageName       ='Closed Won',
+            CloseDate       =System.today(),
+            Year__c         = String.valueOf(System.today().Year()),
+            Expected_Install_Month__c = 'June');
         insert opp;
         
         Staff_List__c staffSobj1 = new Staff_List__c( 
-            Name = 'Employee person 1',
+            Name                = 'Employee person 1',
             Forklift_license__c = true,
             Forklift_Licence_Expiry_Date__c = Date.newInstance(2016, 10, 21),
-            CNC_Operator__c = false,
-            Project_Roles__c = 'Crew Chief',
-            Status__c = 'Active',
-            Allocation_type__c = 'Truck',
+            CNC_Operator__c     = false,
+            Project_Roles__c    = 'Crew Chief',
+            Status__c           = 'Active',
+            Allocation_type__c  = 'Truck',
             Secondary_Project_Role__c = 'Crew Chief'            
         );
         
         Staff_List__c staffSobj2 = new Staff_List__c( 
-            Name = 'Employee person 2',
+            Name                = 'Employee person 2',
             Forklift_license__c = false,
-            CNC_Operator__c = true,
-            Project_Roles__c = 'Crew Chief',
-            Status__c = 'Active',
-            Allocation_type__c = 'Employee'          
+            CNC_Operator__c     = true,
+            Project_Roles__c    = 'Crew Chief',
+            Status__c           = 'Active',
+            Allocation_type__c  = 'Employee'
         );
         
         Staff_List__c staffSobj3 = new Staff_List__c( 
-            Name = 'Freelance person 1',
+            Name                = 'Freelance person 1',
             Forklift_license__c = false,
-            CNC_Operator__c = false,
-            Project_Roles__c = 'Crew Chief',
-            Status__c = 'Active',
-            Allocation_type__c = 'Freelance'             
+            CNC_Operator__c     = false,
+            Project_Roles__c    = 'Crew Chief',
+            Status__c           = 'Active',
+            Allocation_type__c  = 'Freelance'
         );
         
         insert new List<Staff_List__c>{staffSobj1, staffSobj2, staffSobj3};
         
         Project__c project1 = new Project__c(
-            Event_Name__c = 'Test project 1',
-            Opportunity__c = opp.Id,
-            Derig_Date_Time__c = DateTime.newInstance(2016, 06, 21),
-            Derig_Finish_Date_Time__c = DateTime.newInstance(2016, 06, 22),
-            Event_Date_Time__c = DateTime.newInstance(2016, 07, 24),
-            Event_Finish_Date_Time__c = DateTime.newInstance(2016, 07, 25),
-            Install_Date_Time__c = DateTime.newInstance(2016, 07, 02),
+            Event_Name__c               = 'Test project 1',
+            Opportunity__c              = opp.Id,
+            Derig_Date_Time__c          = DateTime.newInstance(2016, 06, 21),
+            Derig_Finish_Date_Time__c   = DateTime.newInstance(2016, 06, 22),
+            Event_Date_Time__c          = DateTime.newInstance(2016, 07, 24),
+            Event_Finish_Date_Time__c   = DateTime.newInstance(2016, 07, 25),
+            Install_Date_Time__c        = DateTime.newInstance(2016, 07, 02),
             Install_Finish_Date_Time__c = DateTime.newInstance(2016, 07, 03),
             Workshop_Start_Date_Time__c = DateTime.newInstance(2016, 07, 10),
             Workshop_Finish_Date_Time__c = DateTime.newInstance(2016, 07, 20),
-            Travel_Start_Date__c = DateTime.newInstance(2016, 07, 06),
-            Travel_End_Date__c = DateTime.newInstance(2016, 07, 07),
-            Client_Visit_Date__c = Date.newInstance(2016, 08, 01),
-            Truck_Loading_Date_Time__c = DateTime.newInstance(2016, 07, 23),
-            Sign_off_Date_Time__c = DateTime.newInstance(2016, 07, 01),
+            Travel_Start_Date__c        = DateTime.newInstance(2016, 07, 06),
+            Travel_End_Date__c          = DateTime.newInstance(2016, 07, 07),
+            Client_Visit_Date__c        = Date.newInstance(2016, 08, 01),
+            Truck_Loading_Date_Time__c  = DateTime.newInstance(2016, 07, 23),
+            Sign_off_Date_Time__c       = DateTime.newInstance(2016, 07, 01),
             Drawing_Completion_Date_Time__c = DateTime.newInstance(2016, 07, 01),
-            Crew_Chief_1__c = staffSobj1.Id,
-            Crew_Chief_2__c = staffSobj2.Id,
-            Crew_Chief_3__c = staffSobj3.Id,
-            Additional_Info__c = 'Client visit date information',
-            Lock_Dates__c = true
+            Crew_Chief_1__c             = staffSobj1.Id,
+            Crew_Chief_2__c             = staffSobj2.Id,
+            Crew_Chief_3__c             = staffSobj3.Id,
+            Additional_Info__c          = 'Client visit date information',
+            Lock_Dates__c               = true
         );
         
         Project__c project2 = new Project__c(
-            Event_Name__c = 'Test project 2',
-            Opportunity__c = opp.Id,
-            Derig_Date_Time__c = DateTime.newInstance(2016, 09, 21),
-            Derig_Finish_Date_Time__c = DateTime.newInstance(2016, 09, 22),
-            Event_Date_Time__c = DateTime.newInstance(2016, 10, 24),
-            Event_Finish_Date_Time__c = DateTime.newInstance(2016, 10, 25),
-            Install_Date_Time__c = DateTime.newInstance(2016, 10, 02),
+            Event_Name__c               = 'Test project 2',
+            Opportunity__c              = opp.Id,
+            Derig_Date_Time__c          = DateTime.newInstance(2016, 09, 21),
+            Derig_Finish_Date_Time__c   = DateTime.newInstance(2016, 09, 22),
+            Event_Date_Time__c          = DateTime.newInstance(2016, 10, 24),
+            Event_Finish_Date_Time__c   = DateTime.newInstance(2016, 10, 25),
+            Install_Date_Time__c        = DateTime.newInstance(2016, 10, 02),
             Install_Finish_Date_Time__c = DateTime.newInstance(2016, 10, 03),
             Workshop_Start_Date_Time__c = DateTime.newInstance(2016, 10, 10),
             Workshop_Finish_Date_Time__c = DateTime.newInstance(2016, 10, 20),
-            Additional_Info__c = 'Client visit date information',
-            Lock_Dates__c = false
+            Additional_Info__c          = 'Client visit date information',
+            Lock_Dates__c               = false
         );
         
         insert new List<Project__c>{ project1, project2 };
