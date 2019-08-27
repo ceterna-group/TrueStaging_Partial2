@@ -197,8 +197,8 @@
                                             <div class="expandable">
                                                 <template v-for="slotGroup in slot.timeslots">
                                                     <span>
-                                                        <div style="border-bottom: 0.5px solid white;">
-                                                            <span style="font-weight: bold; font-size: 12px;">{{ slotGroup.projTSTitle  ? slotGroup.projTSTitle + ':' : 'Untitled:'}}</span>
+                                                        <div style="border-bottom: 0.5px solid white; padding: 5px 0 12px 0">
+                                                            <span style="font-weight: bold; font-size: 12px;">{{ slotGroup.projTSTitle  ? slotGroup.projTSTitle + ':' : 'Untitled:'}}</span><br/>
                                                             <template v-for="int in slotGroup.labourAllocationList.length">
                                                                 <span>{{slotGroup.labourAllocationList[int].name + '' + ((int + 1 != slotGroup.labourAllocationList.length) ? ', ' : '')}}</span>
                                                             </template>
