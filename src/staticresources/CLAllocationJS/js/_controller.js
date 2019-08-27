@@ -204,6 +204,7 @@ var vm = new Vue({
             // console.log(vm.timeslots);
 
             for (var x = 0; x < daysLength; x++) {
+            // for (var x = 0; x < 100; x++) {
               // get the start date, type, id, title
               var startDate     = a[b + 'StartDate'];
               var slot_type     = b.charAt(0).toUpperCase() + b.slice(1);
@@ -212,8 +213,8 @@ var vm = new Vue({
               // calculate the day of the slot, based on start date + number of the loop
 
 
-              console.log('timeslot');
-              console.log(vm.timeslots);
+              // console.log('timeslot');
+              // console.log(vm.timeslots);
 
 
               var next_day = vh.next_day(startDate, x);
@@ -223,8 +224,6 @@ var vm = new Vue({
                   projTSType: slot_type,
                   projTSDate: next_day
               });
-
-
 
 
 
@@ -242,8 +241,8 @@ var vm = new Vue({
                 // console.log('slots 2');
                 _each(time_slots, function (y) {
 
-                  console.log('slot for');
-                  console.log(y.projectName);
+                  // console.log('slot for');
+                  // console.log(y.projectName);
 
                   if (y.toDelete === false) {
                     // set a total people variable initally to 0;
@@ -488,6 +487,9 @@ var vm = new Vue({
           addEvent(dragItems[i], 'dragstart', function (event) {
             // store the ID of the element, and collect it on the drop later on
 
+
+            console.log('setting following id ' + this.id);
+
             event.dataTransfer.setData('Text', this.id);
           });
         }
@@ -645,7 +647,10 @@ var vm = new Vue({
       //draggedSlot = timeslot;
       // console.log('drag ds::: ' + JSON.stringify(draggedSlot));
       // console.log('drop ts::: ' + JSON.stringify(timeslot));
-  
+
+      console.log('clone time slot method called ');
+      console.log(arguments.caller);
+
       cloneTimeSlot(JSON.stringify(draggedSlot), JSON.stringify(timeslot));
     },
     //END TIAGO MENDES

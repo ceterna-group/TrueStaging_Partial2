@@ -179,49 +179,52 @@
                         <div class="project-times-wrapper">
 
                             <div v-for="time in proj.types" class="project-times" style="margin-left: {{time.left_position}}; width: {{time.gantt_width}}">
+<!--                            <div v-for="time in proj.types" class="project-times" style="margin-left:0; width: {{time.gantt_width}}">-->
 
-                                <div v-for="slot in time.slots" class="project-time-slot {{ slot.timeslots.length == 0 ? 'slot_empty' : 'slot_filled' }}"
-                                     style="background: {{time.color}};" draggable="true" ondragover="allowDrop(event)">
+                                <template v-if="!time.slots">
+                                    class=project-time-slot someOtherClass
 
-<!--                                    <template v-if="slot.timeslots">-->
-<!--                                        <div class="slot_filled">-->
+                                </template>
 
-<!--                                        </div>-->
 
-<!--                                    </template>-->
+<!--                                <div style="margin-left: {{ time.left_position }}">-->
 
-                                    <template v-if="slot.timeslots">
 
-                                        <div class="expandable">
-                                            <template v-for="slotGroup in slot.timeslots">
-                                                <span>
-                                                    <div style="border-bottom: 0.5px solid white;">
-                                                        <span style="font-weight: bold; font-size: 12px;">{{ slotGroup.projTSTitle  ? slotGroup.projTSTitle + ':' : 'Untitled:'}}</span>
-                                                        <template v-for="int in slotGroup.labourAllocationList.length">
-                                                            <span>{{slotGroup.labourAllocationList[int].name + '' + ((int + 1 != slotGroup.labourAllocationList.length) ? ', ' : '')}}</span>
-                                                        </template>
-                                                    </div>
-                                                </span>
-                                            </template>
+                                    <div v-for="slot in time.slots" class="project-time-slot {{ slot.timeslots.length == 0 ? 'slot_empty' : 'slot_filled' }}"
+                                         style="background: {{time.color}};" draggable="true" ondragover="allowDrop(event)">
+
+                                        <template v-if="slot.timeslots">
+                                            <div class="expandable">
+                                                <template v-for="slotGroup in slot.timeslots">
+                                                    <span>
+                                                        <div style="border-bottom: 0.5px solid white;">
+                                                            <span style="font-weight: bold; font-size: 12px;">{{ slotGroup.projTSTitle  ? slotGroup.projTSTitle + ':' : 'Untitled:'}}</span>
+                                                            <template v-for="int in slotGroup.labourAllocationList.length">
+                                                                <span>{{slotGroup.labourAllocationList[int].name + '' + ((int + 1 != slotGroup.labourAllocationList.length) ? ', ' : '')}}</span>
+                                                            </template>
+                                                        </div>
+                                                    </span>
+                                                </template>
+                                            </div>
+
+                                        </template>
+
+                                        <div class="slot-truck {{slot.truck}}">
+                                            {{slot.truck_total}}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                                                <path id="svg-truck1"></path>
+                                                <circle cx="68" cy="68" r="6"></circle>
+                                                <path id="svg-truck2"></path>
+                                                <circle cx="32" cy="68" r="6"></circle>
+                                            </svg>
                                         </div>
-
-                                    </template>
-
-                                    <div class="slot-truck {{slot.truck}}">
-                                        {{slot.truck_total}}
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                                            <path id="svg-truck1"></path>
-                                            <circle cx="68" cy="68" r="6"></circle>
-                                            <path id="svg-truck2"></path>
-                                            <circle cx="32" cy="68" r="6"></circle>
-                                        </svg>
-                                    </div>
-                                    <div v-show="slot.total !== 0" class="slot-time">
-                                        {{slot.total * 1}}
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
-                                            <path id="svg-time"></path>
-                                        </svg>
-                                    </div>
+                                        <div v-show="slot.total !== 0" class="slot-time">
+                                            {{slot.total * 1}}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+                                                <path id="svg-time"></path>
+                                            </svg>
+                                        </div>
+<!--                                    </div>-->
                                 </div>
                             </div>
                         </div>

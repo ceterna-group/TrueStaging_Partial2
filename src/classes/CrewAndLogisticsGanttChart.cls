@@ -273,7 +273,8 @@ public  with sharing class CrewAndLogisticsGanttChart
     		slot.add((Map<String, Object>)instance);
 		
 		
-		Project_Time_Slots__c projToClone = [SELECT Id, Project__c, Allocated_hours__c, CodeExternalID__c, Event_Name__c, Finish_Time__c, Number_Of_Staff__c, Name, Slot_Time__c, Start_Time__c, 
+		Project_Time_Slots__c projToClone = [SELECT Id, Project__c, Allocated_hours__c, CodeExternalID__c,
+											Event_Name__c, Finish_Time__c, Number_Of_Staff__c, Name, Slot_Time__c, Start_Time__c,
 											Title__c, Type__c
 											FROM Project_Time_Slots__c
 											WHERE Id = : String.valueOf(slot[0].get('projectTSId'))];
@@ -363,19 +364,17 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//Delete project time slots if the resource is allocated to different time slots
 	@RemoteAction
-	public static String deleteProjectTimeSlots(List<String> projectTSIds)
-	{
-		if(projectTSIds !=null && projectTSIds.size() > 0)
-		{
+	public static String deleteProjectTimeSlots(List<String> projectTSIds) {
+
+		if(projectTSIds !=null && projectTSIds.size() > 0) {
             Savepoint sp = Database.setSavepoint();
             
-			try
-			{
-				List<Project_Time_Slots__c> deletePTSList = [Select Id from Project_Time_Slots__c where Id In :projectTSIds];
-				if(deletePTSList != null && deletePTSList.size() > 0)  delete deletePTSList;				
-			}
-			catch(Exception e)
-			{
+			try {
+				List<Project_Time_Slots__c> deletePTSList = [SELECT Id FROM Project_Time_Slots__c WHERE Id IN :projectTSIds];
+				if(deletePTSList != null && deletePTSList.size() > 0) {
+					delete deletePTSList;
+				}
+			} catch(Exception e) {
                 Database.rollback(sp);
 				System.debug('error while deleting PTS: '+e);
 				return fail;
@@ -389,7 +388,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 	public static String updateCreateProjectTimeSlots(List<UpdateProjectTimeSlots> dirtyProjectTimeSlots) {
 
 		System.debug('trying to create some timeslots');
-		system.debug('objects sent to this method are ' + dirtyProjectTimeSlots);
+		System.debug('objects sent to this method are ' + dirtyProjectTimeSlots);
 
 		if(dirtyProjectTimeSlots != null && dirtyProjectTimeSlots.size() > 0) {
 
@@ -491,8 +490,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 			try {
 				if(!parentListToInsert.isEmpty())  insert parentListToInsert;
 				if(!childListToInsert.isEmpty())  insert childListToInsert;					
-			}
-			catch(Exception e) {
+			} catch(Exception e) {
                 Database.rollback(sp);
 				System.debug('error while creating project time slot: '+e);
 				return fail;
@@ -504,14 +502,12 @@ public  with sharing class CrewAndLogisticsGanttChart
 	
 	//dynamic retrieve of picklist values of assigned role
 	@RemoteAction
-	public static List<String> getRolePickListValues()
-	{
+	public static List<String> getRolePickListValues() {
 		List<String> picklistValues = new List<String>();
 		
-		Schema.DescribeFieldResult dfr = Schema.sObjectType.Labour_Truck_Allocation__c.fields.Assigned_Role__c;
-		List<Schema.PicklistEntry> picklistEntries = dfr.getPicklistValues();
-		for(Schema.PicklistEntry val : picklistEntries)
-		{
+		Schema.DescribeFieldResult dfr 				= Schema.SObjectType.Labour_Truck_Allocation__c.fields.Assigned_Role__c;
+		List<Schema.PicklistEntry> picklistEntries 	= dfr.getPicklistValues();
+		for(Schema.PicklistEntry val : picklistEntries) {
 			picklistValues.add(val.getValue());
 		}
 		
