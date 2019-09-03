@@ -58,12 +58,14 @@ var preprocessor = {
     //END TIAGO MENDES
 
     _els('editor-close')[0].setAttribute('v-on:click',"slot_edit = false, deselect_timeslots(), save_changes()");
+    // _els('editor-close')[0].setAttribute('v-on:click',"slot_edit = false, deselect_timeslots()");
     _els('editor-slots')[0].setAttribute('v-on:click',"deselect_timeslots()");
     _els('slots-create')[0].setAttribute('v-on:click',"create_slot()");
     _els('editor-timeslot')[0].setAttribute('v-on:click.stop',"select_timeslot(timeslot)");
     _els('editor-btn-delete')[0].setAttribute('v-on:click',"delete_slot(timeslot)");
     _els('editor-btn-remove')[0].setAttribute('v-on:click',"remove_crew(timeslot, crew.staffId)");
     _els('crew-assign')[0].setAttribute('v-on:click',"add_crew(staff)");
+    _els('crew-override-assign')[0].setAttribute('v-on:click',"override_crew(staff)");
     _els('editor-btn-painter')[0].setAttribute('v-on:click',"crewquery = 'Painter'");
     _els('editor-btn-crewchief')[0].setAttribute('v-on:click',"crewquery = 'CrewChief'");
     _els('editor-btn-carpenter')[0].setAttribute('v-on:click',"crewquery = 'Carpenter'");

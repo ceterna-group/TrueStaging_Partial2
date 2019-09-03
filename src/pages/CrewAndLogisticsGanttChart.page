@@ -9,14 +9,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/ >
     <meta charset="UTF-8" />
 
-    
-    
-    
+
+
+
     <meta name="author" content="Elliott Thurman-Newell <elliott@ceterna.com>"/ >
-    
+
     <title>Crew/Logistics Manager</title>
-    
-    
+
+
     <style>
         div#control-bar input, .editor-search input {
         	width: calc(100% - 50px);
@@ -41,11 +41,11 @@
         .slotsCollapse {
             display: none;
         }
-        
+
     </style>
-    
+
     <div id="vm" onclick="vm.deselect_projs()">
-        
+
         <!-- Error Page -->
         <div v-show="error == true">
             <div class="overlay"></div>
@@ -58,7 +58,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Loading Page -->
         <div v-show="loaded == false">
             <div class="spinner-fullscreen">
@@ -75,7 +75,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Control Block -->
         <div id="control-bar">
             <!-- Search Bar -->
@@ -87,7 +87,7 @@
             <!-- Save Button -->
             <button id="control-save" class="control-save">{{save_text}}</button>
         </div>
-        
+
         <!-- Project Details Wrapper -->
         <div id="projects-wrapper" onscroll="vm.keep_scroll()">
             <div id="project-row-detail-wrapper">
@@ -95,26 +95,26 @@
                     <div class="project-details-wrapper">
                         <div class="project-details">
                             <!-- Month Seperators -->
-                            
+
                             <div class="project-specials" v-if="proj.seperator == true">
                                 {{proj.month}} {{proj.year}}
                             </div>
-                           
+
                             <div class="{{proj.month + proj.year}}projectCollapse" id="elser" style="margin-left:70px;">
-                            
+
                                 <!-- Project Details -->
                                 <div class="project-status-bar {{proj.no_dates}}">
-                                    
+
                                     <div class="project-status-bar" style="width:40px; text-align:center; vertical-align:middle; line-height: 100px;">
                                         {{ (proj.workshop_estimate / 12).toFixed(1) }}
                                     </div>
-                                    
+
                                     <div class="project-status-bar" style="width:40px; margin-left:41px; text-align:center; vertical-align:middle; line-height: 100px;">
                                         {{ ((proj.workshop_estimate / 12) - (proj.workshop_actual / 12)).toFixed(1) }}
                                     </div>
-                                    
+
                                 </div>
-                                
+
 <!--                                <div v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'" class="project-client">{{ filter_uri(proj.client) }}</div>-->
                                 <div v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected'" class="project-client">{{ filter_uri(proj.client) }}</div>
                                 <div class="project-name">{{ filter_uri(proj.name) }} <span class="project-number">[{{proj.number}}]</span></div>
@@ -160,10 +160,10 @@
                                      class="project-pm project-initial-label">Project Manager: <span class="project-initials">{{proj.project_manager}}</span></div>
                                 <div style="margin-left:70px;" v-show="proj.selected != 'selected' || proj.no_dates == 'nodates' || proj.selected == 'selected' && proj.is_locked != 'VOID'"
                                      class="project-cc project-initial-label">Crew Chief/s: <span class="project-initials">{{proj.crew_chiefs}}</span></div>
-                           
+
                            </div>
-                         
-                            
+
+
                         </div>
                     </div>
                 </div>
@@ -232,7 +232,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Events Wrapper -->
         <div id="events-wrapper">
             <div id="events-scroll">
@@ -241,7 +241,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Date Column Wrapper -->
         <div id="dates-wrapper">
             <div id="date-column-wrapper">
@@ -254,7 +254,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Slot Editor -->
         <div id="slot-editor" v-show="slot_edit == true" transition="fadeboth">
             <div class="overlay"></div>
@@ -296,9 +296,9 @@
                         </div>
                         <div class="slots-element">
                             <div class="slots-label">Title</div>
-                            
-                            <input class="slds-select" type="text" v-model="title" style="position: relative"/>  
-                            
+
+                            <input class="slds-select" type="text" v-model="title" style="position: relative"/>
+
                         </div>
                         <button class="slots-create">New Slot</button>
                     </div>
@@ -357,7 +357,7 @@
                     <div class="editor-crew-header">
                         <div class="editor-help">
                             These are all the staff available for this day.
-                            <br/> Click on a timeslot to see who is available for those hours, and assign staff to that timeslot. 
+                            <br/> Click on a timeslot to see who is available for those hours, and assign staff to that timeslot.
                         </div>
                         <div class="editor-search">
                             <input v-model="crewquery" class="slds-input search-input" placeholder="Search all Crew" />
@@ -372,7 +372,7 @@
                             <button class="editor-btn-fabricator">Fabricators</button>
                             <button class="editor-btn-all">All</button>
                         </div>
-                        
+
                     </div>
                     <div class="crew-card-scroller">
                         <div v-show="staff.available == true" v-for="staff in staff | filterBy check_available | orderBy 'staffName'" class="crew-card {{staff.available}}">
@@ -396,21 +396,23 @@
                             <button v-show="selected_timeslot !== ''" class="crew-assign">Assign</button>
                         </div>
                         <div v-show="staff.available == false" v-for="staff in staff | filterBy check_available | orderBy 'staffName'" class="crew-card {{staff.available}}">
-                            <div class="crew-type">{{staff.allocationType}}</div>
-                            <div class="crew-name">{{staff.staffName}}</div>
-                            <div class="crew-available">{{staff.reason}}</div>
-                            <div class="crew-cnc">{{staff.cncOperator}}</div>
-                            <div class="crew-role">{{staff.projectRole}}</div>
-                            <div class="crew-secrole">{{staff.secondaryRole}}</div>
-                            <div class="crew-forklift">{{staff.forkliftLicense}}</div>
+                            <div class="crew-type crew-card-false">{{staff.allocationType}}</div>
+                            <div class="crew-name crew-card-false">{{staff.staffName}}</div>
+                            <div class="crew-available crew-card-false">{{staff.reason}}</div>
+                            <div class="crew-cnc crew-card-false">{{staff.cncOperator}}</div>
+                            <div class="crew-role crew-card-false">{{staff.projectRole}}</div>
+                            <div class="crew-secrole crew-card-false">{{staff.secondaryRole}}</div>
+                            <div class="crew-forklift crew-card-false">{{staff.forkliftLicense}}</div>
+                            <div class="crew-group crew-card-false" style="display: none">{{staff.groupName}}</div>
+                            <button v-show="staff.groupName != 'PAYE Staff' " class="crew-override-assign">Add To Booking</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
     </div>
-    
+
     <apex:form >
         <apex:actionFunction name="cloneTimeSlot" action="{!cloneTimeSlot}" onComplete="location.reload();">
             <apex:param name="draggedList" value=""/>
@@ -418,8 +420,8 @@
         </apex:actionFunction>
             <!--apex:param name="timeSlot" assignTo="{!passedParam2}" value="12345677"/-->
     </apex:form>
-        
-    
+
+
     <script>
     //TIAGO MENDES
     function allowDrop(ev) {
@@ -462,9 +464,9 @@
             }
         })
     }
-    
+
     // this allows for an interface between the back-end and the front-end
-    // must be added within an open script tag on the VF page in order to 
+    // must be added within an open script tag on the VF page in order to
     // access the visualforce object
     var interfacer = {
         // called from the front-end, sets the back-end data to the objects in data.js
@@ -524,8 +526,8 @@
         }
     }
     </script>
-     
-    
-    <script src="{!URLFOR($Resource.CLAllocationJS, '/js/_controller.js')}"></script>    
-    
+
+
+    <script src="{!URLFOR($Resource.CLAllocationJS, '/js/_controller.js')}"></script>
+
     </apex:page>

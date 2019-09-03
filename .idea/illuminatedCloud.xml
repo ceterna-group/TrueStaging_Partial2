@@ -7,6 +7,7 @@
           <option name="connectionName" value="TS PARTIAL" />
           <option name="connectionType" value="MDAPI" />
           <option name="defaultModuleName" value="TrueStaging Partial2" />
+          <option name="offlineSymbolTablePath" value="$PROJECT_DIR$/IlluminatedCloud/TS_PARTIAL/OfflineSymbolTable.zip" />
         </IlluminatedCloudConnection>
       </list>
     </option>
