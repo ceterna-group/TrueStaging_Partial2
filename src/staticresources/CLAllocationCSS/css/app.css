@@ -1205,6 +1205,7 @@ button.crew-assign, button.crew-override-assign, button.slots-create, button.edi
   transition: all 0.3s;
   color: #0070d2;
   font-size: 13px;
+  opacity: ;
 }
 
 button.editor-btn-crewchief, button.editor-btn-carpenter, button.editor-btn-painter, button.editor-btn-labourer, button.editor-btn-fabricator, button.editor-btn-all {

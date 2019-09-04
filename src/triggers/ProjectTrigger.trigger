@@ -17,7 +17,9 @@ trigger ProjectTrigger on Project__c (before insert, before update, before delet
 
         }
         if(Trigger.IsUpdate) {
+
             ProjectTriggerHandler.afterUpdate(Trigger.newMap, Trigger.oldMap);
+
 
         }
     }

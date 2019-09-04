@@ -289,6 +289,10 @@
                             <option name="selected" value="true" />
                           </MetadataEntry>
                           <MetadataEntry>
+                            <option name="name" value="ProjectTriggerHandlerTest" />
+                            <option name="selected" value="true" />
+                          </MetadataEntry>
+                          <MetadataEntry>
                             <option name="name" value="PurchaseGanttChart" />
                             <option name="selected" value="true" />
                           </MetadataEntry>
