@@ -1,6 +1,6 @@
 public with sharing class AfterProjectTriggerHandler 
 {
-	public void deleteProjectTimeSlots(List<Id> projectIds)	
+	public static void deleteProjectTimeSlots(List<Id> projectIds)
 	{
 		List<Project_Time_Slots__c> projectTSList = new List<Project_Time_Slots__c>();
 		

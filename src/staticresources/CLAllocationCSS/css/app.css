@@ -1127,7 +1127,7 @@ button.control-save[disabled] {
   box-sizing: border-box;
 }
 
-.crew-card.false {
+.crew-card-false {
   opacity: 0.5;
 }
 
@@ -1190,7 +1190,7 @@ button.control-save[disabled] {
   right: 10px;
 }
 
-button.crew-assign, button.slots-create, button.editor-btn-crewchief, button.editor-btn-carpenter, button.editor-btn-painter, button.editor-btn-labourer, button.editor-btn-fabricator, button.editor-btn-all {
+button.crew-assign, button.crew-override-assign, button.slots-create, button.editor-btn-crewchief, button.editor-btn-carpenter, button.editor-btn-painter, button.editor-btn-labourer, button.editor-btn-fabricator, button.editor-btn-all {
   position: absolute;
   bottom: 10px;
   right: 10px;
@@ -1205,6 +1205,7 @@ button.crew-assign, button.slots-create, button.editor-btn-crewchief, button.edi
   transition: all 0.3s;
   color: #0070d2;
   font-size: 13px;
+  opacity: ;
 }
 
 button.editor-btn-crewchief, button.editor-btn-carpenter, button.editor-btn-painter, button.editor-btn-labourer, button.editor-btn-fabricator, button.editor-btn-all {
@@ -1264,7 +1265,7 @@ button.editor-btn-all {
   font-size: 13px;
 }
 
-button.crew-assign:hover, button.slots-create:hover, button.crew-assign:active, button.slots-create:active, button.crew-assign:focus, button.slots-create:focus {
+button.crew-assign:hover, button.crew-override-assign:hover, button.slots-create:hover, button.crew-assign:active, button.slots-create:active, button.crew-assign:focus, button.slots-create:focus {
   outline: 0 !important;
   border-color: #1589ee;
   background-color: #fff;

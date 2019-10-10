@@ -2,7 +2,7 @@ public with sharing class ProjectManagementChart {
 
   public static final String fail = 'Error';
   public static final String success = 'completed';
-    
+
   /*
    * Below method retrieves all the projects that has opportunity as closed won 
    * and install date in greater than historic date.
@@ -17,34 +17,34 @@ public with sharing class ProjectManagementChart {
     }
     Date historicDate = System.today().addMonths(-months);
     List<Project__c> projectList = [
-      SELECT Id, Name, Project_Completed__c, Complete__c, 
-        Client_Name__c, Event_Name__c, Opportunity__c, Opportunity__r.Name, 
-        Opportunity__r.StageName, Project_Manager__c, Project_Manager__r.Name,
-        Client_Visit_Date__c, Collection_Only__c, Derig_Finish_Date_Time__c,
-        Derig_Finish_Date_Time_2__c, Derig_Date_Time__c,  De_Rig_Start_Date_Time_2__c,
-        Drawing_Completion_Date_Time__c, Event_Finish_Date_Time__c,
-        Event_Finish_Date_Time_2__c, Event_Date_Time__c, Event__c,
-        Install_Finish_Date_Time__c, Install_Finish_Date_Time_2__c,
-        Install_Date_Time__c, Install_start_Date_Time_2__c, Sign_off_Date_Time__c,
-        Transport_Arrival_Date_Time__c, Travel_End_Date__c, Travel_End_Date_2__c,
-        Travel_Start_Date__c, Travel_Start_Date_2__c, Truck_Loading_Date_Time__c,
-        Workshop_Finish_Date_Time__c, Workshop_Start_Date_Time__c, Project_Stage__c,  
-        Lock_Dates__c,  Total_Project_Costs__c, Crew_Chief_1__c, Crew_Chief_1__r.Name,
-        Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c, Crew_Chief_3__r.Name, 
-        Deposit_Requested__c, Final_Invoice_Requested__c, Install_Month__c, Install_Year__c, 
-        Opportunity__r.Total_Quote_Amount__c, Additional_Info__c
-      FROM Project__c
-      WHERE 
-        (Opportunity__c != null) AND
-        ((Project_Completed__c = false) OR (Complete__c = false)) AND
-        (Opportunity__r.StageName != :stageClosedLost) AND
-        (Opportunity__r.StageName != NULL) AND
-        ((Install_Date_Time__c >= :historicDate) OR (Install_Date_Time__c = null))
+            SELECT Id, Name, Project_Completed__c, Complete__c,
+                    Client_Name__c, Event_Name__c, Opportunity__c, Opportunity__r.Name,
+                    Opportunity__r.StageName, Project_Manager__c, Project_Manager__r.Name,
+                    Client_Visit_Date__c, Collection_Only__c, Derig_Finish_Date_Time__c,
+                    Derig_Finish_Date_Time_2__c, Derig_Date_Time__c,  De_Rig_Start_Date_Time_2__c,
+                    Drawing_Completion_Date_Time__c, Event_Finish_Date_Time__c,
+                    Event_Finish_Date_Time_2__c, Event_Date_Time__c, Event__c,
+                    Install_Finish_Date_Time__c, Install_Finish_Date_Time_2__c,
+                    Install_Date_Time__c, Install_start_Date_Time_2__c, Sign_off_Date_Time__c,
+                    Transport_Arrival_Date_Time__c, Travel_End_Date__c, Travel_End_Date_2__c,
+                    Travel_Start_Date__c, Travel_Start_Date_2__c, Truck_Loading_Date_Time__c,
+                    Workshop_Finish_Date_Time__c, Workshop_Start_Date_Time__c, Project_Stage__c,
+                    Lock_Dates__c,  Total_Project_Costs__c, Crew_Chief_1__c, Crew_Chief_1__r.Name,
+                    Crew_Chief_2__c, Crew_Chief_2__r.Name, Crew_Chief_3__c, Crew_Chief_3__r.Name,
+                    Deposit_Requested__c, Final_Invoice_Requested__c, Install_Month__c, Install_Year__c,
+                    Opportunity__r.Total_Quote_Amount__c, Additional_Info__c
+            FROM Project__c
+            WHERE
+            (Opportunity__c != null) AND
+            ((Project_Completed__c = false) OR (Complete__c = false)) AND
+            (Opportunity__r.StageName != :stageClosedLost) AND
+            (Opportunity__r.StageName != NULL) AND
+            ((Install_Date_Time__c >= :historicDate) OR (Install_Date_Time__c = null))
     ];
-    List<Map<String, Object>> projectInfoList = buildWrapperList(projectList);    
+    List<Map<String, Object>> projectInfoList = buildWrapperList(projectList);
     return projectInfoList;
   }
-    
+
   //Below method builds a wrapper class for projects. Used in PM gantt chart page.
   public static List<Map<String, Object>> buildWrapperList(List<Project__c> projectList) {
     List<Map<String, Object>> projectInfoList = new List<Map<String, Object>>();
@@ -55,7 +55,7 @@ public with sharing class ProjectManagementChart {
         sobj.put('ProjectNumber', proj.Name);
         sobj.put('EventName', proj.Event_Name__c);
         if (proj.Opportunity__c != null && proj.Opportunity__r.Total_Quote_Amount__c != null) sobj.put('totalProjectCosts', proj.Opportunity__r.Total_Quote_Amount__c); //total projects costs is now total budget.
-        if (proj.Opportunity__c != null)  sobj.put('OpportunityName', proj.Opportunity__r.Name);   
+        if (proj.Opportunity__c != null)  sobj.put('OpportunityName', proj.Opportunity__r.Name);
         if (proj.Opportunity__c != null) sobj.put('OpportunityStage', proj.Opportunity__r.StageName);
         if (proj.Client_Name__c != null) sobj.put('ClientName', proj.Client_Name__c);
         if (proj.Project_Manager__c != null) sobj.put('PMName', proj.Project_Manager__r.Name);
@@ -67,7 +67,7 @@ public with sharing class ProjectManagementChart {
             Datetime d = (Datetime) proj.get(checkField);
             sobj.put(fieldMap.get(field), d.format('dd/MM/yyyy'));
           }
-        }  
+        }
         if (proj.Project_Stage__c != null) sobj.put('projectStage', proj.Project_Stage__c);
         if (proj.Lock_Dates__c != null) sobj.put('IsLocked', proj.Lock_Dates__c);
         if (proj.Deposit_Requested__c != null) sobj.put('IsDeposited',  proj.Deposit_Requested__c);
@@ -82,7 +82,7 @@ public with sharing class ProjectManagementChart {
         if(!crewChiefMembers.isEmpty() && crewChiefMembers.size() > 0) {
           sobj.put('crewChiefMember', crewChiefMembers);
         }
-        projectInfoList.add(sobj); 
+        projectInfoList.add(sobj);
       }
     }
     return projectInfoList;
@@ -162,11 +162,11 @@ public with sharing class ProjectManagementChart {
     dateFields.put('copy__Collection_Only__c', 'collectionEndDate'); // collection
     return dateFields;
   }
-    
+
   //Below method is used for updating dates that was modified on front end.
-  @RemoteAction   
+  @RemoteAction
   public static String updateProjects(List<Map<String, String>> modifiedProjs) {
-    if (modifiedProjs != null  && !modifiedProjs.isEmpty()) {           
+    if (modifiedProjs != null  && !modifiedProjs.isEmpty()) {
       List<Project__c> updateProjects = new List<Project__c>();
       for (Map<String, String> proj : modifiedProjs) {
         if (proj.get('ProjectId') != null && proj.get('ProjectId') != '') {
@@ -177,7 +177,7 @@ public with sharing class ProjectManagementChart {
             if (proj.get(key) != null && proj.get(key) != '') {
               updateProj.put(keyMap.get(key), getDate(proj.get(key)));
             }
-          }    
+          }
           if (proj.get('additionalInfo') != null) {
             updateProj.put('Additional_Info__c', proj.get('additionalInfo'));
           }
@@ -194,14 +194,14 @@ public with sharing class ProjectManagementChart {
     }
     return success;
   }
-    
+
   //Below method gives information on events and bank holidays
   @RemoteAction
   public static List<CalenderInformation> getCalendarHeadlines() {
     List<Calendar_Headlines__c> calenderHeadlineList = [
-      SELECT Label__c, Headline_Type__c, Start_Date__c, End_Date__c 
-      FROM Calendar_Headlines__c 
-      WHERE Label__c != null
+            SELECT Label__c, Headline_Type__c, Start_Date__c, End_Date__c
+            FROM Calendar_Headlines__c
+            WHERE Label__c != null
     ];
     List<CalenderInformation> calenderInfoList = new List<CalenderInformation>();
     if (calenderHeadlineList != null && calenderHeadlineList.size() > 0) {
@@ -216,7 +216,7 @@ public with sharing class ProjectManagementChart {
     }
     return calenderInfoList;
   }
-    
+
   //Colour codes to be displayed on front end for each type.Its stored in custom setting.
   @RemoteAction
   public static Map<String, String> getColorCodes() {
@@ -234,8 +234,8 @@ public with sharing class ProjectManagementChart {
       ccSobj.put('event2', (colorList[0].Event__c != null) ? colorList[0].Event__c : Label.eventDefaultColour);
       ccSobj.put('travel', (colorList[0].Travel__c != null) ? colorList[0].Travel__c : Label.travelDefaultColour);
       ccSobj.put('travel2', (colorList[0].Travel__c != null) ? colorList[0].Travel__c : Label.travelDefaultColour);
-      ccSobj.put('signoff', (colorList[0].Signoff__c != null) ? colorList[0].Signoff__c : Label.signoffDefaultColour);  
-      ccSobj.put('drawing', (colorList[0].Signoff__c != null) ? colorList[0].Signoff__c : Label.signoffDefaultColour);  
+      ccSobj.put('signoff', (colorList[0].Signoff__c != null) ? colorList[0].Signoff__c : Label.signoffDefaultColour);
+      ccSobj.put('drawing', (colorList[0].Signoff__c != null) ? colorList[0].Signoff__c : Label.signoffDefaultColour);
       ccSobj.put('truck', (colorList[0].Truck__c != null) ? colorList[0].Truck__c : Label.truckDefaultColour);
       ccSobj.put('transport', (colorList[0].Truck__c != null) ? colorList[0].Truck__c : Label.truckDefaultColour);
       ccSobj.put('events_Event', (colorList[0].eventEvent__c != null) ? colorList[0].eventEvent__c : Label.eventEventsDefaultColour);
@@ -258,10 +258,10 @@ public with sharing class ProjectManagementChart {
       ccSobj.put('transport', Label.truckDefaultColour);
       ccSobj.put('events_Event', Label.eventEventsDefaultColour);
       ccSobj.put('events_Holiday', Label.eventHolidayDefaultColour);
-    }       
-    return ccSobj;      
+    }
+    return ccSobj;
   }
-    
+
   //gets all opportunities that is not closed won
   @RemoteAction
   public static List<OpportunityRecords> getAllPipelineOpportunities() {
@@ -269,9 +269,9 @@ public with sharing class ProjectManagementChart {
     List<OpportunityRecords> oppRecordList = new List<OpportunityRecords>();
     List<String> stageNameList = new List<String>{Label.OppStageQualification, Label.OppStageNeedAnalysis, Label.OppStageProposal};
     opportunityRecords = [
-      SELECT Id, Name, Amount, CloseDate, Quote_Sent__c 
-      FROM Opportunity 
-      WHERE StageName In :stageNameList
+            SELECT Id, Name, Amount, CloseDate, Quote_Sent__c
+            FROM Opportunity
+            WHERE StageName In :stageNameList
     ];
     if (opportunityRecords != null && opportunityRecords.size() > 0) {
       for (Opportunity record : opportunityRecords) {
@@ -285,19 +285,19 @@ public with sharing class ProjectManagementChart {
     }
     return oppRecordList;
   }
-    
+
   public class OpportunityRecords {
     public String OppName {get; set;}
     public Double OppAmount {get; set;}
     public String OppClosedDate {get; set;}
     public Boolean OppQuoteSent {get; set;}
   }
-    
+
   public class CalenderInformation {
     public String eventOrHolName {get; set;}
     public String headlineType {get; set;}
     public String startDate {get; set;}
     public String endDate {get; set;}
   }
-  
+
 }
