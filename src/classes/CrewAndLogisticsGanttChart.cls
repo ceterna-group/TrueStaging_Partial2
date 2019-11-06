@@ -11,7 +11,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 	{
 		List<StaffInformation> staffInfoList = new List<StaffInformation>();
 		List<Staff_List__c> staffList = [SELECT Id, Name, Status__c, Project_Roles__c, IPAF__c, Driver_s_Licence__c,
-											Forklift_license__c, CNC_Operator__c, Allocation_type__c,	Secondary_Project_Role__c, Group__c,
+											Forklift_license__c, CNC_Operator__c, Allocation_type__c,	Secondary_Project_Role__c,
 											(SELECT RecordTypeId, Date_From__c, Date_to__c, Holiday_Confirmed_available_dates__c
 											FROM Availability_Holidays__r)
 										FROM Staff_List__c
@@ -40,7 +40,6 @@ public  with sharing class CrewAndLogisticsGanttChart
 				staffInfo.iPAF = staff.IPAF__c;
 				staffInfo.driversLicense = staff.Driver_s_Licence__c;
 				staffInfo.secondaryRole = staff.Secondary_Project_Role__c;
-				staffInfo.groupName = staff.Group__c;
 								
 				List<Availability_Holidays__c> availbilityHolidaysList = staff.Availability_Holidays__r;
 				List<AvailabilityInformation> aiList = new List<AvailabilityInformation>();
@@ -92,10 +91,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 											Crew_Chief_3__r.Name, Lock_Dates__c, Client_Visit_Date__c, Travel_Start_Date__c,
 											Travel_End_Date__c, Total_Labour_Hours_Estimate__c, Install_Year__c,
 											Install_Month__c, Opportunity__r.Total_Quantity_for_Site__c,
-											Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c,
-											Install_start_Date_Time_2__c, Install_Finish_Date_Time_2__c,
-											Event__c, Event_Finish_Date_Time_2__c,
-											De_Rig_Start_Date_Time_2__c, Derig_Finish_Date_Time_2__c
+											Opportunity__r.Total_Quantity_for_Workshop__c,Additional_Info__c
 										FROM Project__c
 										WHERE (Opportunity__c != NULL)
 										AND (Opportunity__r.StageName = 'Closed Won')
@@ -124,13 +120,7 @@ public  with sharing class CrewAndLogisticsGanttChart
 				if(proj.Client_Visit_Date__c != null)   projD.clientVisitDate = proj.Client_Visit_Date__c.format();
 				if(proj.Additional_Info__c != null)   projD.additionalInfo = proj.Additional_Info__c;
 				if(proj.Install_Month__c != null)   projD.projectMonth = proj.Install_Month__c;
-				if(proj.Install_Year__c != null)   projD.projectYear = proj.Install_Year__c;
-				if(proj.Install_start_Date_Time_2__c != null)	projD.install2StartDate = proj.Install_start_Date_Time_2__c.format('dd/MM/yyyy');
-				if(proj.Install_Finish_Date_Time_2__c != null)	projD.install2EndDate = proj.Install_Finish_Date_Time_2__c.format('dd/MM/yyyy');
-				if(proj.Event__c != null)	projD.event2StartDate = proj.Event__c.format('dd/MM/yyyy');
-				if(proj.Event_Finish_Date_Time_2__c != null)	projD.event2EndDate = proj.Event_Finish_Date_Time_2__c.format('dd/MM/yyyy');
-				if(proj.De_Rig_Start_Date_Time_2__c != null)	projD.derig2StartDate = proj.De_Rig_Start_Date_Time_2__c.format('dd/MM/yyyy');
-				if(proj.Derig_Finish_Date_Time_2__c != null)	projD.derig2EndDate = proj.Derig_Finish_Date_Time_2__c.format('dd/MM/yyyy');
+				if(proj.Install_Year__c != null)   projD.projectYear = proj.Install_Year__c;				
 				if(proj.Total_Labour_Hours_Estimate__c != null)   projD.totalLabourHoursEstimate = String.valueOf(proj.Total_Labour_Hours_Estimate__c);
 				if(proj.Total_Labour_Hours_Estimate__c != null)   projD.totalLabourHoursEstimate = String.valueOf(proj.Total_Labour_Hours_Estimate__c);
 				projD.totalQuantityforSite = (proj.Opportunity__r.Total_Quantity_for_Site__c != null) ? Integer.valueOf(proj.Opportunity__r.Total_Quantity_for_Site__c) : 0;
@@ -193,7 +183,6 @@ public  with sharing class CrewAndLogisticsGanttChart
 			ccSobj.workshop = (colorList[0].Workshop__c != null) ? colorList[0].Workshop__c : Label.workshopDefaultColour;
 			ccSobj.derig = (colorList[0].Derig__c != null) ? colorList[0].Derig__c : Label.derigDefaultColour;
 			ccSobj.install = (colorList[0].Install__c != null) ? colorList[0].Install__c : Label.installDefaultColour;
-			ccSobj.install2 = (colorList[0].Install__c != null) ? colorList[0].Install__c : Label.installDefaultColour;
 			ccSobj.event = (colorList[0].Event__c != null) ? colorList[0].Event__c : Label.eventDefaultColour;
 			ccSobj.travel = (colorList[0].Travel__c != null) ? colorList[0].Travel__c : Label.travelDefaultColour;
 			ccSobj.events_Event = (colorList[0].eventEvent__c != null) ? colorList[0].eventEvent__c : Label.eventEventsDefaultColour;
@@ -567,12 +556,6 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public Set<String> crewChiefMembers {get; set;}
 		public Integer totalQuantityforSite {get; set;}
 		public Integer totalQuantityforWorkshop {get; set;}
-		public String install2StartDate {get; set;}
-		public String install2EndDate {get; set;}
-		public String event2StartDate {get; set;}
-		public String event2EndDate {get; set;}
-		public String derig2StartDate {get; set;}
-		public String derig2EndDate {get; set;}
 	}
 	
 	public with sharing class StaffInformation{
@@ -585,7 +568,6 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public Boolean iPAF {get; set;}
 		public Boolean driversLicense {get; set;}
 		public String secondaryRole {get; set;}
-		public String groupName {get; set;}
 		public List<AvailabilityInformation> availabilityInfoList {get; set;}
 	}
 	
@@ -605,7 +587,6 @@ public  with sharing class CrewAndLogisticsGanttChart
 		public String workshop {get; set;}
 		public String derig {get; set;}
 		public String install {get; set;}
-		public String install2 {get; set;}
 		public String event {get; set;}
 		public String travel {get; set;} 
 		public String events_Event {get; set;} 

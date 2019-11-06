@@ -7,7 +7,7 @@ var vm = new Vue({
   data: {
     loaded: false,
     projects: [],
-    types: ['workshop', 'travel', 'install', 'install2', 'event', 'event2', 'derig', 'derig2', 'drawing'],
+    types: ['workshop', 'travel', 'install', 'event', 'derig', 'drawing'],
     days: [],
     colors: {},
     events: [],
@@ -27,8 +27,6 @@ var vm = new Vue({
     selected_timeslot: '',
     slot_edit: false,
     save_text: 'Save',
-    saveScrollLeft: '',
-    saveScrollTop: '',
     error: false,
     error_code: ''
   },
@@ -46,16 +44,12 @@ var vm = new Vue({
     },
     // processes the project data given
     process_data: function () {
-      try {
       // empty array to populate with any dates
       var dArr = [];
       // empty array to populate with possible months
       var mArr = [];
       // set colors
       vm.colors = db_colors;
-      vm.colors['install2'] = vm.colors.install;
-      vm.colors['event2'] = vm.colors.event;
-      vm.colors['derig2'] = vm.colors.derig;
       vm.roles = db_roles;
       vm.secroles = db_secroles;
       // add the fields 'available' and 'reason' to the staff data given
@@ -63,24 +57,23 @@ var vm = new Vue({
       // console.log('staff');
       // console.log(db_staff);
       _each(db_staff, function (t) {
-        var stObj = {
-          allocationType: t.allocationType,
-          cncOperator: t.cncOperator,
-          forkliftLicense: t.forkliftLicense,
-          projectRole: t.projectRole,
-          secondaryRole : t.secondaryRole,
-          staffId: t.staffId,
-          staffName: t.staffName,
-          availabilityInfoList: t.availabilityInfoList,
-          available: true,
-          groupName: t.groupName,
-          driversLicense: t.driversLicense,
-          iPAF: t.iPAF,
-          reason: 'Available.'
-        }
-        vm.staff.push(stObj);
-      })
-      // add some more fields to the timeslots to make our life easier
+          var stObj = {
+            allocationType: t.allocationType,
+            cncOperator: t.cncOperator,
+            forkliftLicense: t.forkliftLicense,
+            projectRole: t.projectRole,
+            secondaryRole : t.secondaryRole,
+            staffId: t.staffId,
+            staffName: t.staffName,
+            availabilityInfoList: t.availabilityInfoList,
+            available: true,
+            driversLicense: t.driversLicense,
+            iPAF: t.iPAF,
+            reason: 'Available.'
+          }
+          vm.staff.push(stObj);
+        })
+        // add some more fields to the timeslots to make our life easier
       // console.log('slots');
       _each(db_timeslots, function (q) {
         // for each labour allocation if there is one
@@ -118,269 +111,262 @@ var vm = new Vue({
       vm.save_text = 'Save';
       // console.log('projs', db_projects);
       _each(db_projects, function (a) {
-        // empty object to populate with project fields
-        var nObj = {};
-        // fields to use/set directly
-        nObj['salesforce_id'] = a.projectId ? a.projectId : 'VOID';
-        nObj['client'] = a.projectAccountName ? a.projectAccountName : 'VOID';
-        nObj['name'] = a.projectName ? a.projectName.replace(/&amp;/g, '&') : 'VOID';
-        nObj['number'] = a.projectNumber ? a.projectNumber : 'VOID';
-        nObj['additional_info'] = a.additionalInfo ? a.additionalInfo : '';
-        // calulate this in a seperate function so we can recall
-        nObj['total_hours'] = 0;
-        nObj['client_date'] = a.clientVisitDate ? a.clientVisitDate : 'No Date Given';
-        nObj['onsite_estimate'] = a.totalQuantityforSite ? a.totalQuantityforSite : 0;
-        nObj['onsite_actual'] = 0;
-        nObj['workshop_estimate'] = a.totalQuantityforWorkshop ? a.totalQuantityforWorkshop : 0;
-        nObj['workshop_actual'] = 0;
-        // check if the derig end date is past today
-        var past = a.derigEndDate ? _date.checkPast(a.derigEndDate, _date.getToday()) : false;
-        nObj['past'] = past;
-        // if past, lock the project too
-        nObj['seperator'] = false;
-        nObj['selected_row'] = 'not_selected';
-        // used to make sure seperators are before projects
-        if (a.installStartDate) {
-          var overide_date = a.installStartDate;
-          var overide_month = _date.monthString[Number(overide_date.split('/')[1]) - 1];
-          var overide_year = overide_date.split('/')[2];
-          nObj['month'] = overide_month;
-          nObj['year'] = overide_year;
+          // empty object to populate with project fields
+          var nObj = {};
+          // fields to use/set directly
+          nObj['salesforce_id'] = a.projectId ? a.projectId : 'VOID';
+          nObj['client'] = a.projectAccountName ? a.projectAccountName : 'VOID';
+          nObj['name'] = a.projectName ? a.projectName.replace(/&amp;/g, '&') : 'VOID';
+          nObj['number'] = a.projectNumber ? a.projectNumber : 'VOID';
+          nObj['additional_info'] = a.additionalInfo ? a.additionalInfo : '';
+          // calulate this in a seperate function so we can recall
+          nObj['total_hours'] = 0;
+          nObj['client_date'] = a.clientVisitDate ? a.clientVisitDate : 'No Date Given';
+          nObj['onsite_estimate'] = a.totalQuantityforSite ? a.totalQuantityforSite : 0;
+          nObj['onsite_actual'] = 0;
+          nObj['workshop_estimate'] = a.totalQuantityforWorkshop ? a.totalQuantityforWorkshop : 0;
+          nObj['workshop_actual'] = 0;
+            // check if the derig end date is past today
+          var past = a.derigEndDate ? _date.checkPast(a.derigEndDate, _date.getToday()) : false;
+          nObj['past'] = past;
+          // if past, lock the project too 
+          nObj['seperator'] = false;
+          nObj['selected_row'] = 'not_selected';
           // used to make sure seperators are before projects
-          var numb = vh.month_number.indexOf(overide_month);
-          var newnumb = numb < 10 ? '0' + numb : numb;
-          nObj['order_month'] = overide_year + "" + newnumb + "1";
-          mArr.push(overide_month + ' ' + overide_year);
-        } else {
-          // otherwise use the given month and year fields, if they have one
-          nObj['month'] = a.projectMonth ? a.projectMonth : 'VOID';
-          nObj['year'] = a.projectYear ? a.projectYear : 'VOID';
-          // used to make sure seperators are before projects
-          var numb = a.projectMonth ? vh.month_number.indexOf(a.projectMonth) : 0;
-          var newnumb = numb < 10 ? '0' + numb : numb;
-          nObj['order_month'] = a.projectMonth && a.projectYear ? a.projectYear + "" + newnumb + "1" : 9999;
-          if (a.projectMonth && a.projectYear) {
-            mArr.push(a.projectMonth + ' ' + a.projectYear);
+          if (a.installStartDate) {
+            var overide_date = a.installStartDate;
+            var overide_month = _date.monthString[Number(overide_date.split('/')[1]) - 1];
+            var overide_year = overide_date.split('/')[2];
+            nObj['month'] = overide_month;
+            nObj['year'] = overide_year;
+            // used to make sure seperators are before projects
+            var numb = vh.month_number.indexOf(overide_month);
+            var newnumb = numb < 10 ? '0' + numb : numb;
+            nObj['order_month'] = overide_year + "" + newnumb + "1";
+            mArr.push(overide_month + ' ' + overide_year);
+          } else {
+            // otherwise use the given month and year fields, if they have one
+            nObj['month'] = a.projectMonth ? a.projectMonth : 'VOID';
+            nObj['year'] = a.projectYear ? a.projectYear : 'VOID';
+            // used to make sure seperators are before projects
+            var numb = a.projectMonth ? vh.month_number.indexOf(a.projectMonth) : 0;
+            var newnumb = numb < 10 ? '0' + numb : numb;
+            nObj['order_month'] = a.projectMonth && a.projectYear ? a.projectYear + "" + newnumb + "1" : 9999;
+            if (a.projectMonth && a.projectYear) {
+              mArr.push(a.projectMonth + ' ' + a.projectYear);
+            }
           }
-        }
-        nObj['order_install'] = a.installStartDate ? vh.numerate(a.installStartDate) : vh.numerate('99/99/9999');
-        // abbreviate pm and cc to initials
-        nObj['project_manager'] = a.PMName ? vh.abbreviate(a.PMName) : 'VOID';
-        nObj['crew_chiefs'] = a.crewChiefMembers ? vh.abbreviate(a.crewChiefMembers) : 'VOID';
-        // if there are no dates at all, set a boolean for it for later
-        var counter = 0;
-        // console.log('types 1');
-        _each(vm.types, function (c) {
-          counter += a[c + 'StartDate'] && a[c + 'EndDate'] ? 1 : 0
-        });
-        nObj['no_dates'] = counter == 0 ? 'nodates' : 'dates';
-        // set a container object for all dates (allows v-for loop for types)
-        var dObj = {};
-        console.log(JSON.parse(JSON.stringify(a)));
-        // set the date object fields
-        // console.log('types 2');
-        _each(vm.types, function (b) {
-          // create empty object to populate for each type
-          var tObj = {};
-          // these two will be populated later
-          tObj['type'] = b;
-          tObj['edited'] = false;
-          tObj['color'] = vm.colors[b];
-          // get these later!
-          tObj['left_position'] = '';
-          // set start and end dates for each type object
-          tObj['start_date'] = a[b + 'StartDate'] ? a[b + 'StartDate'] : '99/99/9999';
-          tObj['end_date'] = a[b + 'EndDate'] ? a[b + 'EndDate'] : '00/00/0000';
-          console.log(b, tObj['start_date'], tObj['end_date']);
-          // set the width of the block based on the distance of the start and end
-          tObj['slots'] = [];
-          // work out the number of days that the type ranges
+          nObj['order_install'] = a.installStartDate ? vh.numerate(a.installStartDate) : vh.numerate('99/99/9999');
+          // abbreviate pm and cc to initials
+          nObj['project_manager'] = a.PMName ? vh.abbreviate(a.PMName) : 'VOID';
+          nObj['crew_chiefs'] = a.crewChiefMembers ? vh.abbreviate(a.crewChiefMembers) : 'VOID';
+          // if there are no dates at all, set a boolean for it for later
+          var counter = 0;
+          // console.log('types 1');
+          _each(vm.types, function (c) {
+            counter += a[c + 'StartDate'] && a[c + 'EndDate'] ? 1 : 0
+          });
+          nObj['no_dates'] = counter == 0 ? 'nodates' : 'dates';
+          // set a container object for all dates (allows v-for loop for types)
+          var dObj = {}
+            // set the date object fields
+          // console.log('types 2');
+          _each(vm.types, function (b) {
+            // create empty object to populate for each type
+            var tObj = {};
+            // these two will be populated later
+            tObj['type'] = b;
+            tObj['edited'] = false;
+            tObj['color'] = vm.colors[b];
+            // get these later!
+            tObj['left_position'] = '';
+            // set start and end dates for each type object
+            tObj['start_date'] = a[b + 'StartDate'] ? a[b + 'StartDate'] : '99/99/9999';
+            tObj['end_date'] = a[b + 'EndDate'] ? a[b + 'EndDate'] : '00/00/0000';
+            // set the width of the block based on the distance of the start and end
+            tObj['slots'] = [];
+            // work out the number of days that the type ranges
 
-          // var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0 + 'px';
+            // var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0 + 'px';
 
-          var daysLength = a[b + 'StartDate'] && a[b + 'EndDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0;
+            var daysLength = a[b + 'StartDate'] ? _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length : 0;
 
-          // var daysLength = a[b + 'StartDate'] ? 50 : 0;
+            // var daysLength = a[b + 'StartDate'] ? 50 : 0;
 
-          // var daysLength = 5;
-          // for each of these days we create a slot
+            // var daysLength = 5;
+            // for each of these days we create a slot
 
-          // var earliestDate = vh.daterize(Math.min.apply(Math, _solo(dArr)));
-          // var latestDate = vh.daterize(Math.max.apply(Math, _solo(dArr)));
+            // var earliestDate = vh.daterize(Math.min.apply(Math, _solo(dArr)));
+            // var latestDate = vh.daterize(Math.max.apply(Math, _solo(dArr)));
 
 
-          // console.log('timeslots is ');
-          // console.log(vm.timeslots);
-
-          for (var x = 0; x < daysLength; x++) {
-            // for (var x = 0; x < 100; x++) {
-            // get the start date, type, id, title
-            var startDate     = a[b + 'StartDate'];
-            var slot_type     = b.charAt(0).toUpperCase() + b.slice(1);
-            var slot_id       = a.projectId ? a.projectId : 'VOID';
-            var slot_project  = a.projectName ? a.projectName : 'VOID';
-            // calculate the day of the slot, based on start date + number of the loop
-
-
-            // console.log('timeslot');
+            // console.log('timeslots is ');
             // console.log(vm.timeslots);
 
+            for (var x = 0; x < daysLength; x++) {
+            // for (var x = 0; x < 100; x++) {
+              // get the start date, type, id, title
+              var startDate     = a[b + 'StartDate'];
+              var slot_type     = b.charAt(0).toUpperCase() + b.slice(1);
+              var slot_id       = a.projectId ? a.projectId : 'VOID';
+              var slot_project  = a.projectName ? a.projectName : 'VOID';
+              // calculate the day of the slot, based on start date + number of the loop
 
-            var next_day = vh.next_day(startDate, x);
-            // find where there is a timeslot matching the id, type and date combination
-            var time_slots = _find(vm.timeslots, {
-              projectId: slot_id,
-              projTSType: slot_type,
-              projTSDate: next_day
-            });
+
+              // console.log('timeslot');
+              // console.log(vm.timeslots);
 
 
-
-            // set some variables to defaults
-            var workers       = [];
-            var stringWorkers = '';
-            var truck         = false;
-            var total_hours   = 0;
-            var truck_no      = 0;
-            var s_title       = '';
-
-            // if there are timeslots
-            if (time_slots !== 'NO MATCH') {
-              // for each timeslot
-              // console.log('slots 2');
-              _each(time_slots, function (y) {
-
-                // console.log('slot for');
-                // console.log(y.projectName);
-
-                if (y.toDelete === false) {
-                  // set a total people variable initally to 0;
-                  var total_people = 0;
-                  // for each person allocated to the slot
-
-                  // THIS WILL BREAK HERE IF NO LIST
-                  if (y.labourAllocationList) {
-                    //
-                  } else {
-                    console.error('NO LABOUR ALLOCATION LISTS :(');
-                  }
-                  _each(y.labourAllocationList, function (z) {
-                    // find their related staff credentials
-                    var worker = _find(vm.staff, {
-                      staffId: z.staffId
-                    });
-                    // if there are workers
-                    if (worker !== 'NO MATCH') {
-                      // if there is a truck, set truck to true, and add to the truck number
-                      // push the name and add to people total
-                      // console.log('workers');
-                      _each(worker, function (v) {
-                        if (v.allocationType === 'Truck') {
-                          truck = true;
-                          truck_no += 1
-                        }
-                        workers.push(v.staffName);
-                        if (v.allocationType !== 'Truck') {
-                          total_people += 1
-                        }
-                      })
-                    } else {
-                      // if user has been set inactive we have nothing on them
-                      workers.push('INACTIVE USER');
-                    }
-                  });
-                  // work out the hours of the timeslot, then times by the number of people (not trucks)
-                  if((Number(y.projTSFinishTime.split(':')[0]) > Number(y.projTSStartTime.split(':')[0]))){
-
-                    var difference = Number(y.projTSFinishTime.split(':')[0]) - Number(y.projTSStartTime.split(':')[0]);
-                    total_hours += difference * total_people;
-
-                  } else {
-
-                    var difference = 24.00 - Number(y.projTSStartTime.split(':')[0]) + Number(y.projTSFinishTime.split(':')[0]);
-                    total_hours += difference * total_people;
-                  }
-
-                  if(y.projTSTitle){
-                    s_title = y.projTSTitle;
-                  }
-                }
+              var next_day = vh.next_day(startDate, x);
+              // find where there is a timeslot matching the id, type and date combination
+              var time_slots = _find(vm.timeslots, {
+                  projectId: slot_id,
+                  projTSType: slot_type,
+                  projTSDate: next_day
               });
 
-              // for each of the worker names we pushed, dedupe them and get the length;
-              var allWorkers = _solo(workers);
-              var allWorkersLength = allWorkers.length;
-              // for each worker, create a list of names to show on the slot, adding commas if needed
-              for (var w = 0; w < allWorkersLength; w++) {
-                var comma = w === 0 && allWorkers.length === 1 || w === allWorkers.length - 1 ? '' : ', ';
-                stringWorkers += allWorkers[w] + comma;
+
+
+              // set some variables to defaults
+              var workers       = [];
+              var stringWorkers = '';
+              var truck         = false;
+              var total_hours   = 0;
+              var truck_no      = 0;
+              var s_title       = '';
+              
+              // if there are timeslots
+              if (time_slots !== 'NO MATCH') {
+                // for each timeslot
+                // console.log('slots 2');
+                _each(time_slots, function (y) {
+
+                  // console.log('slot for');
+                  // console.log(y.projectName);
+
+                  if (y.toDelete === false) {
+                    // set a total people variable initally to 0;
+                    var total_people = 0;
+                    // for each person allocated to the slot
+                  
+                    // THIS WILL BREAK HERE IF NO LIST
+                    if (y.labourAllocationList) {
+                      // 
+                    } else {
+                      console.error('NO LABOUR ALLOCATION LISTS :(');
+                    }
+                    _each(y.labourAllocationList, function (z) {
+                        // find their related staff credentials
+                        var worker = _find(vm.staff, {
+                            staffId: z.staffId
+                          });
+                          // if there are workers
+                        if (worker !== 'NO MATCH') {
+                          // if there is a truck, set truck to true, and add to the truck number
+                          // push the name and add to people total
+                          // console.log('workers');
+                          _each(worker, function (v) {
+                            if (v.allocationType === 'Truck') {
+                              truck = true;
+                              truck_no += 1
+                            }
+                            workers.push(v.staffName);
+                            if (v.allocationType !== 'Truck') {
+                              total_people += 1
+                            }
+                          })
+                        } else {
+                          // if user has been set inactive we have nothing on them
+                          workers.push('INACTIVE USER');
+                        }
+                      });
+                      // work out the hours of the timeslot, then times by the number of people (not trucks)
+                      if((Number(y.projTSFinishTime.split(':')[0]) > Number(y.projTSStartTime.split(':')[0]))){
+
+                        var difference = Number(y.projTSFinishTime.split(':')[0]) - Number(y.projTSStartTime.split(':')[0]);
+                        total_hours += difference * total_people;
+
+                      } else {
+
+                        var difference = 24.00 - Number(y.projTSStartTime.split(':')[0]) + Number(y.projTSFinishTime.split(':')[0]);
+                        total_hours += difference * total_people;
+                      }
+
+                      if(y.projTSTitle){
+                        s_title = y.projTSTitle;
+                      }
+                  }
+                });
+
+                // for each of the worker names we pushed, dedupe them and get the length;
+                var allWorkers = _solo(workers);
+                var allWorkersLength = allWorkers.length;
+                // for each worker, create a list of names to show on the slot, adding commas if needed
+                for (var w = 0; w < allWorkersLength; w++) {
+                  var comma = w === 0 && allWorkers.length === 1 || w === allWorkers.length - 1 ? '' : ', ';
+                  stringWorkers += allWorkers[w] + comma;
+                }
+              } else {
+                // if no timeslots, set blank
+                time_slots = [];
               }
-            } else {
-              // if no timeslots, set blank
-              time_slots = [];
+              // create an object for the slot, and push to the project's type's slots
+              var sObj = {
+                type: b,
+                truck: truck,
+                truck_total: truck_no,
+                date: next_day,
+                project: slot_id,
+                project_name: slot_project,
+                total: total_hours,
+                timeslots: time_slots,
+
+                slot_title: s_title,
+                workerlist: stringWorkers,
+
+                // todo: NEW
+                margin_left: '100px',
+                slots_mini : 'something'
+
+              };
+              tObj['slots'].push(sObj);
             }
-            // create an object for the slot, and push to the project's type's slots
-            var sObj = {
-              type: b,
-              truck: truck,
-              truck_total: truck_no,
-              date: next_day,
-              project: slot_id,
-              project_name: slot_project,
-              total: total_hours,
-              timeslots: time_slots,
-
-              slot_title: s_title,
-              workerlist: stringWorkers,
-
-              // todo: NEW
-              margin_left: '100px',
-              slots_mini : 'something'
-
-            };
-            tObj['slots'].push(sObj);
-          }
-          // get the width of the type slot
-          tObj['gantt_width'] = a[b + 'StartDate']  && a[b + 'EndDate'] ?
+            // get the width of the type slot
+            tObj['gantt_width'] = a[b + 'StartDate'] ?
               _date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length === 0 ?
-                  100 + 'px' : (_date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length) * 200 + 'px' : 0 + 'px';
-          // if there was a date, add it to a list of all dates
-          if (a[b + 'StartDate']) {
-            var startNum = vh.numerate(tObj['start_date']);
-            var endNum = vh.numerate(tObj['end_date']);
-            if (startNum != 0) dArr.push(startNum);
-            if (endNum != 0) dArr.push(endNum);
-          }
-          // add to project object
-          dObj[b] = tObj;
-        });
-        nObj['types'] = dObj;
-        // push new project to vue
-        vm.projects.push(nObj);
-      })
+              100 + 'px' : (_date.getDatesBetween(a[b + 'StartDate'], a[b + 'EndDate']).length) * 200 + 'px' : 0 + 'px';
+            // if there was a date, add it to a list of all dates
+            if (a[b + 'StartDate']) {
+              dArr.push(vh.numerate(tObj['start_date']), vh.numerate(tObj['end_date']));
+            }
+            // add to project object
+            dObj[b] = tObj;
+          });
+          nObj['types'] = dObj;
+          // push new project to vue
+          vm.projects.push(nObj);
+        })
 
       // console.log(vm.projects);
       // console.log(vm.staff);
-
+      
       // create an empty project for each possibly month to use as seperators
       // console.log('solo');
       _each(_solo(mArr), function (a) {
-        fObj = {};
-        // set month, year, and set that its a seperator for css purposes
-        fObj['month'] = a.split(' ')[0];
-        fObj['year'] = a.split(' ')[1];
-        fObj['seperator'] = true;
-        var numb = vh.month_number.indexOf(a.split(' ')[0]);
-        var newnumb = numb < 10 ? '0' + numb : numb;
-        fObj['order_month'] = a.split(' ')[1] + "" + newnumb + "0";
-        // push to projects
-        vm.projects.push(fObj);
-      })
-      // from the list of all dates calculate our date range
+          fObj = {};
+            // set month, year, and set that its a seperator for css purposes
+          fObj['month'] = a.split(' ')[0];
+          fObj['year'] = a.split(' ')[1];
+          fObj['seperator'] = true;
+          var numb = vh.month_number.indexOf(a.split(' ')[0]);
+          var newnumb = numb < 10 ? '0' + numb : numb;
+          fObj['order_month'] = a.split(' ')[1] + "" + newnumb + "0";
+          // push to projects
+          vm.projects.push(fObj);
+        })
+        // from the list of all dates calculate our date range
       var earliestDate = vh.daterize(Math.min.apply(Math, _solo(dArr)));
       var latestDate = vh.daterize(Math.max.apply(Math, _solo(dArr)));
-      console.log(dArr);
-      console.log(earliestDate, latestDate);
       // set an array for each day in the range, will be used to create columns later
       vm.days = dArr.length == 0 ? [] : _date.getDatesBetween(earliestDate, latestDate);
       // calculate totals hours for each project from all timeslots
@@ -403,17 +389,12 @@ var vm = new Vue({
         eObj['left_position'] = '';
         // set the width of the block based on the distance of the start and end
         eObj['gantt_width'] = c.startDate ?
-            _date.getDatesBetween(c.startDate, c.endDate).length == 0 ?
-                100 + 'px' : (_date.getDatesBetween(c.startDate, c.endDate).length) * 200 + 'px' : 0 + 'px';
+          _date.getDatesBetween(c.startDate, c.endDate).length == 0 ?
+          100 + 'px' : (_date.getDatesBetween(c.startDate, c.endDate).length) * 200 + 'px' : 0 + 'px';
         vm.events.push(eObj);
       })
       _log('Processing complete.');
       vm.check_loaded();
-      } catch(e) {
-        console.error(e);
-        vm.error = true;
-        vm.error_code = e;
-      }
     },
     // check columns have loaded before we mess with them
     check_loaded: function () {
@@ -434,38 +415,35 @@ var vm = new Vue({
       // create a day measure to check agaisn't via date ids
       var dayMeasures = [];
       _each(vm.days, function (a) {
-        dayMeasures[a.Id] = _el(a.Id).offsetLeft;
-        a.Today = a.Id == _date.getToday() ? true : false;
-      })
-      // for each projects' types' startdate, set the matching day measure position
+          dayMeasures[a.Id] = _el(a.Id).offsetLeft;
+          a.Today = a.Id == _date.getToday() ? true : false;
+        })
+        // for each projects' types' startdate, set the matching day measure position
       _each(vm.projects, function (b) {
-        _each(vm.types, function (c) {
-          if (b.types) {
-            // compensate size
-            b.types[c].left_position = dayMeasures[b.types[c].start_date] - 341 + 'px';
+          _each(vm.types, function (c) {
+            if (b.types) {
+              // compensate size
+              b.types[c].left_position = dayMeasures[b.types[c].start_date] - 341 + 'px';
+            }
+          })
+        })
+        // for each events startdate, set the matching day measure position
+      _each(vm.events, function (d) {
+          if (d.start_date) {
+            if (dayMeasures[d.start_date] != undefined) {
+              d.left_position = Number(dayMeasures[d.start_date]) - 341 + 'px';
+            } else {
+              d.left_position = -9999 + 'px';
+            }
           }
         })
-      })
-      // for each events startdate, set the matching day measure position
-      _each(vm.events, function (d) {
-        if (d.start_date) {
-          if (dayMeasures[d.start_date] != undefined) {
-            d.left_position = Number(dayMeasures[d.start_date]) - 341 + 'px';
-          } else {
-            d.left_position = -9999 + 'px';
-          }
-        }
-      })
-      // set scroll
+        // set scroll
       vm.keep_scroll();
       // set today position
+      vm.set_today();
+      // load totals
 
-      if(!vm.saveScrollLeft){
-        vm.set_today();
-      } else {
-        vm.set_prev_scroll();
-      }
-      // load totals vs
+
       // todo: changed
       // vh.redo_slots();
 
@@ -480,20 +458,20 @@ var vm = new Vue({
 
         var acc = document.getElementsByClassName("project-specials");
         for (var i = 0; i < acc.length; i++) {
-
-          acc[i].addEventListener("click", handleCollapse, false);
+    
+            acc[i].addEventListener("click", handleCollapse, false);
         }
 
         /*var detailsProject = document.getElementsByClassName("detailCollapse");
         for (var i = 0; i < detailsProject.length; i++) {
-
+    
           detailsProject[i].addEventListener("click", closeProjectDetail, false);
         }
-
+        
         function closeProjectDetail() {
           var month = this.innerHTML.split(' ').join('');
           var months = document.getElementsByClassName('detailCollapse');
-
+          
           for(var j = 0; j < months.length; j++) {
 
             if(months[j].parentNode.parentNode.parentNode.classList.contains("selected_row")) {
@@ -516,7 +494,7 @@ var vm = new Vue({
           });
         }
         function handleCollapse() {
-
+    	
           var month = this.innerHTML.split(' ').join('');
           var collapse = true;
           var months = document.getElementsByClassName(month.trim() + 'projectCollapse');
@@ -533,7 +511,7 @@ var vm = new Vue({
           if(collapse) {
 
             for(var j = 0; j < months.length; j++) {
-              months[j].parentNode.parentNode.parentNode.classList.toggle("projectCollapse");
+                months[j].parentNode.parentNode.parentNode.classList.toggle("projectCollapse");
             }
 
             var months = document.getElementsByClassName(month.trim() + 'slotsCollapse');
@@ -550,17 +528,17 @@ var vm = new Vue({
       // create a day measure to check agaisn't via date ids
       var dayMeasures = [];
       _each(vm.days, function (a) {
-        dayMeasures[a.Id] = _el(a.Id).offsetLeft;
-        a.Today = a.Id == _date.getToday() ? true : false;
-      })
-      // for each projects' types' startdate, set the matching day measure position
+          dayMeasures[a.Id] = _el(a.Id).offsetLeft;
+          a.Today = a.Id == _date.getToday() ? true : false;
+        })
+        // for each projects' types' startdate, set the matching day measure position
       _each(vm.projects, function (b) {
         _each(vm.types, function (c) {
           if (b.types) {
             // compensate size
             b.types[c].gantt_width = b.types[c].start_date != '99/99/9999' ?
-                _date.getDatesBetween(b.types[c].start_date, b.types[c].end_date).length == 0 ?
-                    100 + 'px' : (_date.getDatesBetween(b.types[c].start_date, b.types[c].end_date).length) * 200 + 'px' : 0 + 'px';
+              _date.getDatesBetween(b.types[c].start_date, b.types[c].end_date).length == 0 ?
+              100 + 'px' : (_date.getDatesBetween(b.types[c].start_date, b.types[c].end_date).length) * 200 + 'px' : 0 + 'px';
             b.types[c].left_position = dayMeasures[b.types[c].start_date] - 341 + 'px';
           }
         })
@@ -625,15 +603,6 @@ var vm = new Vue({
     // custom filter for the search box
     filter_projects: function (a) {
       return vh.filter(a);
-    },
-
-    set_prev_scroll: function(){
-      _el('project-scroll').scrollLeft =  vm.saveScrollLeft;
-      _el('project-scroll').scrollTop = vm.saveScrollTop;
-
-      // console.log(vm.saveScrollLeft);
-      // console.log(vm.saveScrollTop);
-
     },
 
     // select a day slot
@@ -744,26 +713,6 @@ var vm = new Vue({
       vh.redo_slots();
       vm.dirty = true;
     },
-    // adds a crew member to a timeslot
-    override_crew: function (crew) {
-      // console.log(crew, vm.roles.indexOf(crew.projectRole));
-      // console.log(crew, vm.secroles.indexOf(crew.secondaryRole));
-
-      var newcrew = {
-        name: crew.staffName,
-        role: vm.roles.indexOf(crew.projectRole) !== -1 ? crew.projectRole : vm.roles[0],
-        secrole: vm.secroles.indexOf(crew.secondaryRole) !== -1 ? crew.secondaryRole : vm.secroles[0],
-        cnc: crew.cncOperator,
-        forklift: crew.forkliftLicense,
-        type: crew.allocationType,
-        staffId: crew.staffId,
-        assignedRole: crew.projectRole ? crew.projectRole : 'Transport',
-      };
-      vm.selected_timeslot.labourAllocationList.push(newcrew);
-      vm.selected_timeslot.toUpdate = true;
-      vh.redo_slots();
-      vm.dirty = true;
-    },
     delete_slot: function(timeslot) {
       timeslot.toDelete = true;
       timeslot.selected = false;
@@ -781,77 +730,74 @@ var vm = new Vue({
       corresponding[0].labourAllocationList = [];
       vh.redo_slots();
       vm.dirty = true;
-
+   
     },
     // find edited projects and group them to send to the interfacer
     save_changes: function () {
-      vm.saveScrollLeft = _el('project-scroll').scrollLeft;
-      vm.saveScrollTop = _el('project-scroll').scrollTop;
-
       vm.save_text = 'Saving';
       var updated_create_array = [];
       var delete_array = [];
       _each(vm.projects, function(a) {
         if (a.types) {
-          _each(vm.types, function(b) {
-            if (a.types[b].slots) {
-              _each(a.types[b].slots, function(c) {
-                _each(c.timeslots, function(d) {
-                  if (d.toUpdate == true && d.projectTSId != 'NOID') {
-                    var crewObj = [];
-                    _each(d.labourAllocationList, function(e) {
-                      crewObj.push({
-                        staffId: e.staffId,
-                        assignedRole: e.assignedRole
-                      })
+        _each(vm.types, function(b) {
+          if (a.types[b].slots) {
+            _each(a.types[b].slots, function(c) {
+              _each(c.timeslots, function(d) {
+                if (d.toUpdate == true && d.projectTSId != 'NOID') {
+                  var crewObj = [];
+                  _each(d.labourAllocationList, function(e) {
+                    crewObj.push({
+                      staffId: e.staffId,
+                      assignedRole: e.assignedRole
                     })
-                    var pushObj = {
-                      projectId: d.projectId,
-                      projTSId: d.projectTSId,
-                      projTSType: d.projTSType,
-                      projTSTitle: d.projTSTitle,
-                      projTSDate: d.projTSDate,
-                      startTime: d.projTSStartTime,
-                      finishTime: d.projTSFinishTime,
-                      crewMembers: crewObj
-                    }
-                    if (pushObj.crewMembers.length == 0) {
-                      // dont push
-                    } else {
-                      updated_create_array.push(pushObj);
-                    }
+                  })
+                  var pushObj = {
+                    projectId: d.projectId,
+                    projTSId: d.projectTSId,
+                    projTSType: d.projTSType,
+                    projTSTitle: d.projTSTitle,
+                    projTSDate: d.projTSDate,
+                    startTime: d.projTSStartTime,
+                    finishTime: d.projTSFinishTime,
+                    crewMembers: crewObj
                   }
-                  if (d.toCreate == true && d.projectTSId == 'NOID' && d.toDelete == false) {
-                    var crewObj = [];
-                    _each(d.labourAllocationList, function(e) {
-                      crewObj.push({
-                        staffId: e.staffId,
-                        assignedRole: e.assignedRole
-                      })
+                  if (pushObj.crewMembers.length == 0) {
+                    // dont push
+                  } else {
+                    updated_create_array.push(pushObj);
+                  }
+                }
+                if (d.toCreate == true && d.projectTSId == 'NOID' && d.toDelete == false) {
+                  var crewObj = [];
+                  _each(d.labourAllocationList, function(e) {
+                    crewObj.push({
+                      staffId: e.staffId,
+                      assignedRole: e.assignedRole
                     })
-                    var pushObj = {
-                      projectId: d.projectId,
-                      projTSId: 'NOID',
-                      projTSType: d.projTSType,
-                      projTSTitle: d.projTSTitle,
-                      projTSDate: d.projTSDate,
-                      startTime: d.projTSStartTime,
-                      finishTime: d.projTSFinishTime,
-                      crewMembers: crewObj
-                    }
-                    if (pushObj.crewMembers.length == 0) {
-                      // dont push
-                    } else {
-                      updated_create_array.push(pushObj);
-                    }
+                  })
+                  var pushObj = {
+                    projectId: d.projectId,
+                    projTSId: 'NOID',
+                    projTSType: d.projTSType,
+                    projTSTitle: d.projTSTitle,
+                    projTSDate: d.projTSDate,
+                    startTime: d.projTSStartTime,
+                    finishTime: d.projTSFinishTime,
+                    crewMembers: crewObj
                   }
-                  if (d.toDelete == true && d.projectTSId != 'NOID') {
-                    delete_array.push(d.projectTSId);
+                  if (pushObj.crewMembers.length == 0) {
+                    // dont push
+                  } else {
+                    updated_create_array.push(pushObj);
                   }
-                })
+                }
+                if (d.toDelete == true && d.projectTSId != 'NOID') {
+                  delete_array.push(d.projectTSId);
+                }
               })
-            }
-          })
+            })
+          }
+        })
         }
       });
       // console.log('update/create', updated_create_array);
@@ -927,5 +873,5 @@ var vm = new Vue({
   beforeCompile: function () {
     // run the preprocessor
     preprocessor.process();
-  }
+  },
 })
