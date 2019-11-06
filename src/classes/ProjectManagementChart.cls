@@ -106,7 +106,7 @@ public with sharing class ProjectManagementChart {
     dateFields.put('transportStartDate', 'Transport_Arrival_Date_Time__c'); // transport arrival
     dateFields.put('transportEndDate', 'Transport_Arrival_Date_Time__c'); // transport arrival
     dateFields.put('travelStartDate', 'Travel_Start_Date__c'); // travel 1 start
-    dateFields.put('travelEndDate', 'Travel_End_Date__c');	// travel 1 end
+    dateFields.put('travelEndDate', 'Travel_End_Date__c');  // travel 1 end
     dateFields.put('installStartDate', 'Install_Date_Time__c'); // install 1 start
     dateFields.put('installEndDate', 'Install_Finish_Date_Time__c'); // install 1 end
     dateFields.put('eventStartDate', 'Event_Date_Time__c'); // event 1 start
@@ -114,7 +114,7 @@ public with sharing class ProjectManagementChart {
     dateFields.put('derigStartDate', 'Derig_Date_Time__c'); // derig 1 start
     dateFields.put('derigEndDate', 'Derig_Finish_Date_Time__c'); // derig 1 end
     dateFields.put('travel2StartDate', 'Travel_Start_Date_2__c'); // travel 2 start
-    dateFields.put('travel2EndDate', 'Travel_End_Date_2__c');	// travel 2 end
+    dateFields.put('travel2EndDate', 'Travel_End_Date_2__c');  // travel 2 end
     dateFields.put('install2StartDate', 'Install_start_Date_Time_2__c'); // install 2 start
     dateFields.put('install2EndDate', 'Install_Finish_Date_Time_2__c'); // install 2 end
     dateFields.put('event2StartDate', 'Event__c'); // event 2 start
@@ -141,7 +141,7 @@ public with sharing class ProjectManagementChart {
     dateFields.put('Transport_Arrival_Date_Time__c', 'transportStartDate'); // transport arrival
     dateFields.put('copy__Transport_Arrival_Date_Time__c', 'transportEndDate'); // transport arrival
     dateFields.put('Travel_Start_Date__c', 'travelStartDate'); // travel 1 start
-    dateFields.put('Travel_End_Date__c', 'travelEndDate');	// travel 1 end
+    dateFields.put('Travel_End_Date__c', 'travelEndDate');  // travel 1 end
     dateFields.put('Install_Date_Time__c', 'installStartDate'); // install 1 start
     dateFields.put('Install_Finish_Date_Time__c', 'installEndDate'); // install 1 end
     dateFields.put('Event_Date_Time__c', 'eventStartDate'); // event 1 start
@@ -149,7 +149,7 @@ public with sharing class ProjectManagementChart {
     dateFields.put('Derig_Date_Time__c', 'derigStartDate'); // derig 1 start
     dateFields.put('Derig_Finish_Date_Time__c', 'derigEndDate'); // derig 1 end
     dateFields.put('Travel_Start_Date_2__c', 'travel2StartDate'); // travel 2 start
-    dateFields.put('Travel_End_Date_2__c', 'travel2EndDate');	// travel 2 end
+    dateFields.put('Travel_End_Date_2__c', 'travel2EndDate');  // travel 2 end
     dateFields.put('Install_start_Date_Time_2__c', 'install2StartDate'); // install 2 start
     dateFields.put('Install_Finish_Date_Time_2__c', 'install2EndDate'); // install 2 end
     dateFields.put('Event__c', 'event2StartDate'); // event 2 start

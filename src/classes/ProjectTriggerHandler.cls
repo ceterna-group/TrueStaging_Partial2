@@ -1,5 +1,5 @@
 //
-public static class ProjectTriggerHandler {
+public class ProjectTriggerHandler {
 
     public static void afterUpdate(Map<Id, Project__c> newRecordMap, Map<Id, Project__c> oldRecordMap) {
         checkBookingOverride(newRecordMap, oldRecordMap);
@@ -14,59 +14,68 @@ public static class ProjectTriggerHandler {
         typeDateMap.put('Derig', new List<String>{'Derig_Date_Time__c', 'Derig_Finish_Date_Time__c' });
         typeDateMap.put('Travel', new List<String>{'Travel_Start_Date__c', 'Travel_End_Date__c' });
 
-        String body = 'Dear X' + ', <br/><br/>' + 'The following timeslots no longer fall within the relevant range: <br/><br/>';
+        Map<String,Map<String,String>> projectMap = new Map<String,Map<String,String>>();
 
-        Integer timeSlotCount = 0;
-
-        List<Project_Time_Slots__c> projectTimeSlots =  [SELECT Id, Type__c, Date__c, Project__c, Project__r.Name, Project__r.Workshop_Start_Date_Time__c,
+        List<Project_Time_Slots__c> projectTimeSlots = [SELECT Id, Type__c, Date__c, Project__c, Project__r.Name, Project__r.Workshop_Start_Date_Time__c,
                                                                 Project__r.Install_Date_Time__c, Project__r.Event_Date_Time__c, Project__r.Derig_Date_Time__c,
-                                                                Email_Sent__c, Name, Start_Time__c, Finish_Time__c,
+                                                                Email_Sent__c, Name, Start_Time__c, Finish_Time__c, Project__r.Opportunity__r.Name,
                                                                 (SELECT Name, Assigned_Role__c, Project_Time_Slots_Start_Time__c,
                                                                         Project_Time_Slots_Finish_Time__c, Staff_List__r.Name
                                                                 FROM Labour_Truck_Allocation__r)
                                                         FROM Project_Time_Slots__c
-                                                        WHERE Project__c IN : newRecordMap.keySet()];
+                                                        WHERE Project__c IN :newRecordMap.keySet()];
 
-        for(Project_Time_Slots__c timeSlot : projectTimeSlots){
+        List<Project_Time_Slots__c> timeSlotsToDelete = new List<Project_Time_Slots__c>();
+
+        for (Project_Time_Slots__c timeSlot : projectTimeSlots){
 
             if (timeSlot.Date__c < (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) ||
                     timeSlot.Date__c > (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1])){
 
-                if(timeSlot.Email_Sent__c == false){
+                // add it to the list of time slots to delete
+                timeSlotsToDelete.add(timeSlot);
 
-                    timeSlotCount += 1;
-                    System.debug('timeslotDATE:' + timeSlot.Date__c);
-                    System.debug('wholeMap@' + typeDateMap);
-                    System.debug('typeDateMap1@' + (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]));
-                    System.debug('typeDateMap2@' + (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1]));
-
-                    body += 'Timeslot for : ' + '<b>Project - ' + newRecordMap.get(timeSlot.Project__c).Name + '</b><br/>';
-                    body += 'Project Time Slot Name : <b>' + timeSlot.Name + '</b>  <br/>';
-                    body += 'Type : ' + timeSlot.Type__c + '<br/><br/>';
-                    body += 'Project Time Slot Start Time : ' + timeSlot.Start_Time__c + '<br/>';
-                    body += 'Project Time Slot Finish Time : ' + timeSlot.Finish_Time__c + '<br/><br/>';
-
-                    for(Labour_Truck_Allocation__c labourTruckAllocation : timeSlot.Labour_Truck_Allocation__r){
-                        body += labourTruckAllocation.Staff_List__r.Name + ' - ' + labourTruckAllocation.Assigned_Role__c + '<br/>';
-                    }
-
-                    body += '<br/><br/>';
-
-                    timeSlot.Email_Sent__c = true;
+                // then add the content to the email body map
+                if (!projectMap.containsKey(timeSlot.Project__c)){
+                    projectMap.put(timeSlot.Project__c, new Map<String,String>());
                 }
 
-            } else if(timeSlot.Email_Sent__c) {
-                timeSlot.Email_Sent__c = false;
+                if (!projectMap.get(timeSlot.Project__c).containsKey(timeSlot.Type__c)){
+
+                    String typeInfo = 'Type : ' + timeSlot.Type__c + '<br/>' +
+                            'The start date was ' + oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) + ' ' +
+                            'and the end date was ' + oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1]) + '<br/>' +
+                            'The start date is now ' + newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) + ' ' +
+                            'and the end date is now ' + newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1]) + '<br/><br/>' +
+                            '<b>The following time slots and entries have been deleted:</b>';
+                    projectMap.get(timeSlot.Project__c).put(timeSlot.Type__c, typeInfo);
+                }
+
+                String typeInfoBody = projectMap.get(timeSlot.Project__c).get(timeSlot.Type__c);
+
+                typeInfoBody += '<br/>Time slot: ' + timeSlot.Start_Time__c + ' - ' + timeSlot.Finish_Time__c + ' ' + timeSlot.Name + '<br/>';
+
+                for (Labour_Truck_Allocation__c allocation : timeSlot.Labour_Truck_Allocation__r){
+                    typeInfoBody += '   ' + allocation.Staff_List__r.Name + ' - ' + allocation.Assigned_Role__c + '<br/>';
+                }
+
+                projectMap.get(timeSlot.Project__c).put(timeSlot.Type__c, typeInfoBody + '<br/>');
+
             }
+
         }
 
-        if(timeSlotCount > 0) {
+        if (!timeSlotsToDelete.isEmpty()) {
 
-            List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
-            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            String body = 'Hello' + ', <br/><br/>' + 'Dates have been changed which may affect your Crew Allocation App: <br/><br/>';
+
+            List<Messaging.SingleEmailMessage> mails    = new List<Messaging.SingleEmailMessage>();
+            Messaging.SingleEmailMessage mail           = new Messaging.SingleEmailMessage();
 
             List<String> sendTo = new List<String>();
-            sendTo.add('ashwin@ceterna.com');
+            sendTo.add('operations@truestaging.co.uk');
+            sendTo.add('jake@ceterna.com');
+            sendTo.add('ronan@ceterna.com');
             mail.setToAddresses(sendTo);
 
             mail.setReplyTo('test@ceterna.com');
@@ -79,7 +88,7 @@ public static class ProjectTriggerHandler {
             mails.add(mail);
 
             Messaging.sendEmail(mails);
-            update projectTimeSlots;
+            delete timeSlotsToDelete;
         }
     }
 }
