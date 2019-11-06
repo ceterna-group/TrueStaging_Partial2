@@ -15,8 +15,9 @@ public class ProjectTriggerHandler {
         typeDateMap.put('Travel', new List<String>{'Travel_Start_Date__c', 'Travel_End_Date__c' });
 
         Map<String,Map<String,String>> projectMap = new Map<String,Map<String,String>>();
+        Map<String,String> oppNameMap = new Map<String,String>();
 
-        List<Project_Time_Slots__c> projectTimeSlots = [SELECT Id, Type__c, Date__c, Project__c, Project__r.Name, Project__r.Workshop_Start_Date_Time__c,
+        List<Project_Time_Slots__c> projectTimeSlots = [SELECT Id, Type__c, Title__c, Date__c, Project__c, Project__r.Name, Project__r.Workshop_Start_Date_Time__c,
                                                                 Project__r.Install_Date_Time__c, Project__r.Event_Date_Time__c, Project__r.Derig_Date_Time__c,
                                                                 Email_Sent__c, Name, Start_Time__c, Finish_Time__c, Project__r.Opportunity__r.Name,
                                                                 (SELECT Name, Assigned_Role__c, Project_Time_Slots_Start_Time__c,
@@ -32,6 +33,8 @@ public class ProjectTriggerHandler {
             if (timeSlot.Date__c < (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) ||
                     timeSlot.Date__c > (Datetime)newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1])){
 
+                oppNameMap.put(timeSlot.Project__c,timeSlot.Project__r.Opportunity__r.Name);
+
                 // add it to the list of time slots to delete
                 timeSlotsToDelete.add(timeSlot);
 
@@ -42,24 +45,24 @@ public class ProjectTriggerHandler {
 
                 if (!projectMap.get(timeSlot.Project__c).containsKey(timeSlot.Type__c)){
 
-                    String typeInfo = 'Type : ' + timeSlot.Type__c + '<br/>' +
-                            'The start date was ' + oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) + ' ' +
-                            'and the end date was ' + oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1]) + '<br/>' +
-                            'The start date is now ' + newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0]) + ' ' +
-                            'and the end date is now ' + newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1]) + '<br/><br/>' +
-                            '<b>The following time slots and entries have been deleted:</b>';
+                    String typeInfo = '<p><span style="font-size:14px;font-weight:bold;">Type: ' + timeSlot.Type__c + '</span><br/>' +
+                            'The start date was ' + Datetime.valueOf(oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0])).format('dd-MM-YYYY') + ' ' +
+                            'and the end date was ' + Datetime.valueOf(oldRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1])).format('dd-MM-YYYY') + '<br/>' +
+                            'The start date is now ' + Datetime.valueOf(newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[0])).format('dd-MM-YYYY') + ' ' +
+                            'and the end date is now ' + Datetime.valueOf(newRecordMap.get(timeSlot.Project__c).get(typeDateMap.get(timeSlot.Type__c)[1])).format('dd-MM-YYYY') + '<br/><br/>' +
+                            'The following ' + timeSlot.Type__c + ' time slots and entries have been deleted:';
                     projectMap.get(timeSlot.Project__c).put(timeSlot.Type__c, typeInfo);
                 }
 
                 String typeInfoBody = projectMap.get(timeSlot.Project__c).get(timeSlot.Type__c);
 
-                typeInfoBody += '<br/>Time slot: ' + timeSlot.Start_Time__c + ' - ' + timeSlot.Finish_Time__c + ' ' + timeSlot.Name + '<br/>';
+                typeInfoBody += '<p><b>Time slot: ' + timeSlot.Title__c + ' ' + timeSlot.Start_Time__c + ' - ' + timeSlot.Finish_Time__c + ' ' + '</b><br/>';
 
                 for (Labour_Truck_Allocation__c allocation : timeSlot.Labour_Truck_Allocation__r){
-                    typeInfoBody += '   ' + allocation.Staff_List__r.Name + ' - ' + allocation.Assigned_Role__c + '<br/>';
+                    typeInfoBody += '<span style="padding-left:5px;">' + allocation.Staff_List__r.Name + ' - ' + allocation.Assigned_Role__c + '</span><br/>';
                 }
 
-                projectMap.get(timeSlot.Project__c).put(timeSlot.Type__c, typeInfoBody + '<br/>');
+                projectMap.get(timeSlot.Project__c).put(timeSlot.Type__c, typeInfoBody + '<br/></p>');
 
             }
 
@@ -67,7 +70,19 @@ public class ProjectTriggerHandler {
 
         if (!timeSlotsToDelete.isEmpty()) {
 
-            String body = 'Hello' + ', <br/><br/>' + 'Dates have been changed which may affect your Crew Allocation App: <br/><br/>';
+            String body = 'Hello' + ', <br/>' + 'Dates have been changed which may affect your Crew Allocation App: <br/><br/>';
+
+            for (String projectId : projectMap.keySet()){
+
+                body += '<p><span style="font-size:20px;"><b>' + oppNameMap.get(projectId) + ' - ' + newRecordMap.get(projectId).Project_Number_Hidden__c + '</b></span>';
+
+                for (String type : projectMap.get(projectId).keySet()){
+
+                    body += projectMap.get(projectId).get(type) + '<br/>';
+                }
+
+                body += '</p>';
+            }
 
             List<Messaging.SingleEmailMessage> mails    = new List<Messaging.SingleEmailMessage>();
             Messaging.SingleEmailMessage mail           = new Messaging.SingleEmailMessage();
@@ -79,10 +94,9 @@ public class ProjectTriggerHandler {
             mail.setToAddresses(sendTo);
 
             mail.setReplyTo('test@ceterna.com');
-            mail.setSenderDisplayName('Ceterna Support Test');
+            mail.setSenderDisplayName('Crew Allocation App');
 
             mail.setSubject('Crew Allocation App - Edited Slots Report');
-            body += '<br/><br/>Regards, <br/> Ceterna Support';
             mail.setHtmlBody(body);
 
             mails.add(mail);
